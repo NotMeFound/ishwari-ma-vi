@@ -256,7 +256,7 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({
                   type="text"
                   value={configForm.adminRouteSlug}
                   onChange={(e) => setConfigForm(prev => ({ ...prev, adminRouteSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, '') }))}
-                  placeholder="admin-portal"
+                  placeholder="admin-user"
                   className="w-full px-3 py-2 bg-transparent text-slate-900 dark:text-white focus:outline-hidden font-bold"
                   required
                 />
