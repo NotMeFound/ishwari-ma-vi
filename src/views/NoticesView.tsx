@@ -52,6 +52,22 @@ export const NoticesView: React.FC<NoticesViewProps> = ({ lang, notices }) => {
 
   const handleDownloadNotice = (notice: Notice, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+
+    if (notice.file_data) {
+      const link = document.createElement('a');
+      link.href = notice.file_data;
+      link.download = notice.file_name?.toLowerCase().endsWith('.pdf')
+        ? notice.file_name
+        : `${notice.file_name || 'notice'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setDownloadToast(t(`Downloaded PDF: ${notice.file_name}`, `PDF कागजात डाउनलोड भयो: ${notice.file_name}`));
+      setTimeout(() => setDownloadToast(null), 3500);
+      return;
+    }
+
     const content = `=====================================================
 ISHWARI SECONDARY SCHOOL (ईश्वरी माध्यमिक विद्यालय)
 Official Government Model Secondary School • EMIS: 48012004

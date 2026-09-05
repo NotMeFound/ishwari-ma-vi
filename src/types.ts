@@ -30,6 +30,8 @@ export interface Notice {
   category: 'academic' | 'exam' | 'scholarship' | 'admin' | 'event';
   pinned: boolean;
   file_name: string;
+  file_data?: string;
+  file_size_kb?: number;
   description_en: string;
   description_np: string;
 }
@@ -187,4 +189,3 @@ export interface SecurityAuditLogEntry {
   severity?: 'success' | 'warning' | 'danger';
   details: string;
 }
-

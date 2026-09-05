@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Language,
   SchoolData,
@@ -26,7 +26,6 @@ import {
   BookOpen,
   FolderDown,
   MessageSquare,
-  FileCode,
   Download,
   Trash2,
   Edit3,
@@ -48,7 +47,10 @@ import {
   Database,
   KeyRound,
   Clock,
-  Check
+  Check,
+  Upload,
+  FileText,
+  X
 } from 'lucide-react';
 
 import { SiteCustomizerTab } from './admin/SiteCustomizerTab';
@@ -210,6 +212,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
     category: Notice['category'];
     pinned: boolean;
     file_name: string;
+    file_data?: string;
+    file_size_kb?: number;
     description_en: string;
     description_np: string;
   }>({
@@ -218,10 +222,14 @@ export const AdminView: React.FC<AdminViewProps> = ({
     title_np: '',
     category: 'academic',
     pinned: false,
-    file_name: 'document.pdf',
+    file_name: '',
+    file_data: undefined,
+    file_size_kb: undefined,
     description_en: '',
     description_np: '',
   });
+  const [noticeFileError, setNoticeFileError] = useState<string>('');
+  const noticeFileInputRef = useRef<HTMLInputElement>(null);
 
   // Staff Form State
   const [staffForm, setStaffForm] = useState<{
@@ -444,9 +452,73 @@ export const AdminView: React.FC<AdminViewProps> = ({
   };
 
   // 2. Notices CRUD
+  const handleNoticePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNoticeFileError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type: PDF only
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      setNoticeFileError(
+        t(
+          'Invalid file type! Attachment file type: PDF only (.pdf).',
+          'अमान्य फाइल प्रकार! केवल PDF (.pdf) फाइल मात्र अपलोड गर्न सकिन्छ।'
+        )
+      );
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    // Validate file size: must be <= 200 KB (204,800 bytes)
+    const maxSizeBytes = 200 * 1024;
+    const fileSizeKb = Math.round((file.size / 1024) * 10) / 10;
+    if (file.size > maxSizeBytes) {
+      setNoticeFileError(
+        t(
+          `File size exceeds limit! The PDF file must be ≤ 200 KB (selected: ${fileSizeKb} KB).`,
+          `फाइल आकार बढी भयो! PDF फाइल २०० KB वा सोभन्दा कम हुनुपर्छ (छानिएको: ${fileSizeKb} KB)।`
+        )
+      );
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setNoticeForm(prev => ({
+        ...prev,
+        file_name: file.name,
+        file_data: base64,
+        file_size_kb: fileSizeKb,
+      }));
+      showToast(t(`PDF attached: ${file.name} (${fileSizeKb} KB)`, `PDF संलग्न गरियो: ${file.name} (${fileSizeKb} KB)`));
+    };
+    reader.onerror = () => {
+      setNoticeFileError(t('Failed to read PDF file. Please try again.', 'फाइल पढ्न सकिएन। कृपया पुनः प्रयास गर्नुहोस्।'));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveNoticePdf = () => {
+    setNoticeForm(prev => ({
+      ...prev,
+      file_name: '',
+      file_data: undefined,
+      file_size_kb: undefined,
+    }));
+    setNoticeFileError('');
+    if (noticeFileInputRef.current) {
+      noticeFileInputRef.current.value = '';
+    }
+  };
+
   const handleSaveNotice = (e: React.FormEvent) => {
     e.preventDefault();
     if (!noticeForm.title_en) return;
+
+    const attachmentName = noticeForm.file_name?.trim() || 'notice.pdf';
 
     if (noticeForm.id) {
       // Edit
@@ -456,7 +528,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
         title_np: noticeForm.title_np || noticeForm.title_en,
         category: noticeForm.category,
         pinned: noticeForm.pinned,
-        file_name: noticeForm.file_name,
+        file_name: attachmentName,
+        file_data: noticeForm.file_data,
+        file_size_kb: noticeForm.file_size_kb,
         description_en: noticeForm.description_en,
         description_np: noticeForm.description_np || noticeForm.description_en,
       } : n);
@@ -472,7 +546,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
         date_np: 'आज',
         category: noticeForm.category,
         pinned: noticeForm.pinned,
-        file_name: noticeForm.file_name,
+        file_name: attachmentName,
+        file_data: noticeForm.file_data,
+        file_size_kb: noticeForm.file_size_kb,
         description_en: noticeForm.description_en,
         description_np: noticeForm.description_np || noticeForm.description_en,
       };
@@ -486,10 +562,16 @@ export const AdminView: React.FC<AdminViewProps> = ({
       title_np: '',
       category: 'academic',
       pinned: false,
-      file_name: 'document.pdf',
+      file_name: '',
+      file_data: undefined,
+      file_size_kb: undefined,
       description_en: '',
       description_np: '',
     });
+    setNoticeFileError('');
+    if (noticeFileInputRef.current) {
+      noticeFileInputRef.current.value = '';
+    }
   };
 
   const handleDeleteNotice = (id: number) => {
@@ -997,7 +1079,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
           { id: 'documents', labelEn: `Documents (${documents.length})`, labelNp: `दस्तावेज (${documents.length})`, icon: FolderDown },
           { id: 'messages', labelEn: `Inquiries (${messages.length})`, labelNp: `सन्देश (${messages.length})`, icon: MessageSquare, badge: messages.filter(m => m.status === 'new').length },
           { id: 'security', labelEn: 'Security & Stealth Link', labelNp: 'सुरक्षा तथा गोप्य मार्ग', icon: ShieldAlert },
-          { id: 'system', labelEn: 'Database & PHP Export', labelNp: 'ब्याकअप तथा PHP कोड', icon: Database },
+          { id: 'system', labelEn: 'Database Backup & Restore', labelNp: 'डाटाबेस ब्याकअप तथा रिस्टोर', icon: Database },
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -1283,17 +1365,25 @@ export const AdminView: React.FC<AdminViewProps> = ({
               {noticeForm.id && (
                 <button
                   type="button"
-                  onClick={() => setNoticeForm({
-                    id: null,
-                    title_en: '',
-                    title_np: '',
-                    category: 'academic',
-                    pinned: false,
-                    file_name: 'document.pdf',
-                    description_en: '',
-                    description_np: '',
-                  })}
-                  className="text-xs text-slate-500 hover:text-slate-700 underline"
+                  onClick={() => {
+                    setNoticeForm({
+                      id: null,
+                      title_en: '',
+                      title_np: '',
+                      category: 'academic',
+                      pinned: false,
+                      file_name: '',
+                      file_data: undefined,
+                      file_size_kb: undefined,
+                      description_en: '',
+                      description_np: '',
+                    });
+                    setNoticeFileError('');
+                    if (noticeFileInputRef.current) {
+                      noticeFileInputRef.current.value = '';
+                    }
+                  }}
+                  className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 underline cursor-pointer"
                 >
                   {t('Cancel Edit', 'रद्द गर्नुहोस्')}
                 </button>
@@ -1336,13 +1426,73 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Attachment File Name</label>
-                <input
-                  type="text"
-                  value={noticeForm.file_name}
-                  onChange={e => setNoticeForm({ ...noticeForm, file_name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                />
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                  <span>{t('Attachment File Type: PDF Only', 'संलग्न फाइल प्रकार: केवल PDF')}</span>
+                  <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400 font-mono">
+                    {t('Max size: ≤ 200 KB', 'अधिकतम: ≤ २०० KB')}
+                  </span>
+                </label>
+
+                <div className="space-y-1.5">
+                  <input
+                    ref={noticeFileInputRef}
+                    type="file"
+                    id="notice-pdf-input"
+                    accept="application/pdf,.pdf"
+                    onChange={handleNoticePdfUpload}
+                    className="hidden"
+                  />
+
+                  {!noticeForm.file_name ? (
+                    <label
+                      htmlFor="notice-pdf-input"
+                      className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-[#1E40AF] dark:hover:border-[#1E40AF] bg-slate-50 dark:bg-slate-800/50 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 text-xs text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                    >
+                      <Upload className="w-4 h-4 text-[#1E40AF] shrink-0" />
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">
+                        {t('Upload Notice PDF (≤ 200 KB)', 'सूचना PDF फाइल अपलोड गर्नुहोस् (≤ २०० KB)')}
+                      </span>
+                    </label>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="w-4 h-4 text-[#1E40AF] shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900 dark:text-white truncate font-mono text-[11px]">
+                            {noticeForm.file_name}
+                          </p>
+                          <p className="text-[10px] text-blue-700 dark:text-blue-400 font-mono">
+                            {noticeForm.file_size_kb ? `${noticeForm.file_size_kb} KB • ` : ''}PDF Ready
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <label
+                          htmlFor="notice-pdf-input"
+                          title={t('Replace PDF', 'PDF फेर्नुहोस्')}
+                          className="px-2 py-1 rounded-md text-[10px] font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-[#1E40AF] cursor-pointer transition"
+                        >
+                          {t('Change', 'फेर्नुहोस्')}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleRemoveNoticePdf}
+                          title={t('Remove PDF', 'हटाउनुहोस्')}
+                          className="p-1 rounded-md text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 cursor-pointer transition"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {noticeFileError && (
+                    <p className="text-[11px] font-medium text-red-600 dark:text-red-400 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{noticeFileError}</span>
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Description (English)</label>
@@ -1395,6 +1545,12 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase font-mono">
                         {n.category}
                       </span>
+                      {n.file_name && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 font-mono">
+                          <FileText className="w-2.5 h-2.5" />
+                          <span>PDF{n.file_size_kb ? ` (${n.file_size_kb}KB)` : ''}</span>
+                        </span>
+                      )}
                       <span className="text-[11px] text-slate-400 font-mono">{t(n.date_en, n.date_np)}</span>
                     </div>
                     <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate">
@@ -1420,9 +1576,12 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           category: n.category,
                           pinned: n.pinned,
                           file_name: n.file_name,
+                          file_data: n.file_data,
+                          file_size_kb: n.file_size_kb,
                           description_en: n.description_en,
                           description_np: n.description_np,
                         });
+                        setNoticeFileError('');
                         window.scrollTo({ top: 300, behavior: 'smooth' });
                       }}
                       className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
@@ -1962,72 +2121,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {/* TAB 9: PHP PROJECT SOURCE CODE & EXPORT */}
-      {activeTab === 'php_export' && (
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <FileCode className="w-4 h-4 text-[#1E40AF]" />
-                <span>{t('Production PHP Project Source & Package', 'पूर्ण PHP प्रोजेक्ट तथा स्रोत कोड')}</span>
-              </h3>
-              <p className="text-xs text-slate-500">
-                {t('A complete standalone PHP 8+ web application ready for XAMPP, WAMP, cPanel, Apache, and Nginx.', 'XAMPP, cPanel, Apache मा सिधै चलाउन सकिने पूर्ण PHP वेबसाइट कोड।')}
-              </p>
-            </div>
-
-            <a
-              href="/ishwari-school-php-project.zip"
-              download="ishwari-school-php-project.zip"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#1E40AF] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-md shadow-[#1E40AF]/25 transition shrink-0 cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-              <span>{t('Download Complete Project ZIP (100% PHP)', 'पूरा PHP प्रोजेक्ट (ZIP) डाउनलोड')}</span>
-            </a>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-              <span className="text-xs font-bold text-[#1E40AF]">📁 Architecture</span>
-              <p className="text-xs text-slate-700 dark:text-slate-300">
-                Native PHP 8.2 with MVC structure, JSON/SQLite automated database, and MySQL schema (`schema.sql`).
-              </p>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-              <span className="text-xs font-bold text-[#1E40AF]">🔒 Tight Security</span>
-              <p className="text-xs text-slate-700 dark:text-slate-300">
-                Session fixation protection, CSRF token validation, XSS prevention via `htmlspecialchars()`, and password hashing.
-              </p>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-              <span className="text-xs font-bold text-[#1E40AF]">🌐 English & Nepali</span>
-              <p className="text-xs text-slate-700 dark:text-slate-300">
-                Full bilingual language switch (`?lang=en` & `?lang=np`) + dark/light theme cookies.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-              {t('Included Files in PHP ZIP Distribution', 'PHP प्रोजेक्टमा समावेश गरिएका फाइलहरू')}
-            </h4>
-            <div className="bg-slate-950 text-slate-200 p-4 rounded-xl font-mono text-xs space-y-1">
-              <p className="text-[#1E40AF]">ishwari-school-php/</p>
-              <p className="pl-4">├── index.php         (Public institutional portal with Bikram Sambat clock)</p>
-              <p className="pl-4">├── admin.php         (Full Admin CMS with CRUD operations)</p>
-              <p className="pl-4">├── login.php         (Secure Admin Login with CSRF verification)</p>
-              <p className="pl-4">├── logout.php        (Secure session destruction)</p>
-              <p className="pl-4">├── config.php        (Database handler & bilingual dictionaries)</p>
-              <p className="pl-4">├── schema.sql        (Full MySQL database table definitions)</p>
-              <p className="pl-4">├── data/data.json    (Production seed database)</p>
-              <p className="pl-4">├── assets/css/style.css (#1E40AF theme, dark/light styles, grid system)</p>
-              <p className="pl-4">├── assets/js/app.js   (Language toggler, theme switch, mobile menu)</p>
-              <p className="pl-4">└── README.md         (Deployment instructions for Apache/Nginx/XAMPP)</p>
-            </div>
-          </div>
         </div>
       )}
     </div>
