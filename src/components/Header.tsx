@@ -210,7 +210,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center space-x-2 overflow-hidden min-w-0">
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-700 text-white tracking-wide shrink-0 shadow-xs uppercase">
                   <Bell className="w-2.5 h-2.5 animate-pulse" />
-                  <span>{t('Urgent', 'ताजा सूचना')}</span>
+                  <span>{t('Latest News', 'ताजा सूचना')}</span>
                 </span>
                 <button
                   onClick={() => onRouteChange('notices')}

@@ -23,16 +23,16 @@ export const initialSchoolData: SchoolData = {
   affiliation_en: "Government of Nepal Model Secondary School",
   affiliation_np: "नेपाल सरकार नमुना माध्यमिक विद्यालय",
   code: "EMIS: 48012004",
-  estd_bs: "2035 B.S.",
+  estd_bs: "2026 B.S.",
   estd_ad: "1978 A.D.",
   phone: "+977-01-5542109 / 9851234567",
   email: "info@ishwari.edu.np",
-  address_en: "Ward No. 4, Nepal",
-  address_np: "वडा नं. ४, नेपाल",
-  principal_name_en: "Mr. Narayan Prasad Koirala",
-  principal_name_np: "श्री नारायण प्रसाद कोइराला",
+  address_en: "Ward No. 6, H Gaun Baijanath Municipality-Banke, Nepal",
+  address_np: "वडा नं. ६, एच गाउँ, बैजनाथ गाउँपालिका-बाँके, नेपाल",
+  principal_name_en: "Mr. Mangal Khatri",
+  principal_name_np: "श्री मङ्गल खत्री)",
   principal_message_en: "Welcome to Ishwari Secondary School. For over four decades, our institution has stood as a beacon of public education, blending academic rigor with compassionate moral values. We are committed to fostering critical inquiry, digital literacy, and community leadership in every student.",
-  principal_message_np: "ईश्वरी माध्यमिक विद्यालयको आधिकारिक डिजिटल पोर्टलमा यहाँहरूलाई हार्दिक स्वागत छ। वि.सं. २०३५ सालदेखि यस भेगकै अग्रणी सामुदायिक नमुना विद्यालयको रूपमा हामीले विद्यार्थीहरूको चौतर्फी विकासमा जोड दिँदै आएका छौं।"
+  principal_message_np: "ईश्वरी माध्यमिक विद्यालयको आधिकारिक डिजिटल पोर्टलमा यहाँहरूलाई हार्दिक स्वागत छ। वि.सं. २०२६ सालदेखि यस भेगकै अग्रणी सामुदायिक नमुना विद्यालयको रूपमा हामीले विद्यार्थीहरूको चौतर्फी विकासमा जोड दिँदै आएका छौं।"
 };
 
 export const initialNotices: Notice[] = [
@@ -77,8 +77,8 @@ export const initialNotices: Notice[] = [
 export const initialStaff: StaffMember[] = [
   {
     id: 1,
-    name_en: "Mr. Narayan Prasad Koirala",
-    name_np: "श्री नारायण प्रसाद कोइराला",
+    name_en: "Mr. Mangal Khatri",
+    name_np: "श्री मङ्गल खत्री)",
     role: "principal",
     designation_en: "Headmaster / Principal (M.Ed, M.A.)",
     designation_np: "प्रधानाध्यापक (एम.एड, एम.ए.)",
@@ -86,8 +86,8 @@ export const initialStaff: StaffMember[] = [
   },
   {
     id: 2,
-    name_en: "Mrs. Sharada Devi Sharma",
-    name_np: "श्रीमती शारदा देवी शर्मा",
+    name_en: "Mrs. Bhim Bahadur Khatri",
+    name_np: "श्री भीम बहादुर खत्री",
     role: "teacher",
     designation_en: "Senior Science Coordinator (M.Sc. Physics)",
     designation_np: "वरिष्ठ विज्ञान संयोजक (एम.एससी.)",
