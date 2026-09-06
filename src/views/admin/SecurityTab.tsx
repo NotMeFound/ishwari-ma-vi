@@ -17,6 +17,7 @@ import {
   Link as LinkIcon,
   ShieldAlert
 } from 'lucide-react';
+import { ConfirmationModal, ConfirmationVariant } from '../../components/ConfirmationModal';
 
 interface SecurityTabProps {
   lang: Language;
@@ -49,6 +50,24 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({
   // Audit filter
   const [auditFilter, setAuditFilter] = useState<'all' | 'success' | 'warning' | 'danger'>('all');
 
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    itemName: string;
+    confirmText: string;
+    variant: ConfirmationVariant;
+    action: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    itemName: '',
+    confirmText: 'Confirm',
+    variant: 'warning',
+    action: () => {}
+  });
+
   const isNp = lang === 'np';
   const t = (en: string, np: string) => (isNp ? np : en);
 
@@ -70,33 +89,79 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({
       return;
     }
 
-    const updated = {
-      ...configForm,
-      adminPassword: newPass,
-    };
-    setConfigForm(updated);
-    onUpdateSecurityConfig(updated);
-    setCurrentPass('');
-    setNewPass('');
-    setConfirmPass('');
-    setCredSuccess(t('Master password updated successfully!', 'प्रशासक पासवर्ड सफलतापूर्वक अद्यावधिक गरियो!'));
-    onShowToast(t('Master administrator password changed.', 'पासवर्ड परिवर्तन गरियो।'));
+    setConfirmState({
+      isOpen: true,
+      variant: 'update',
+      title: t('Confirm Password Change', 'पासवर्ड परिवर्तन पुष्टि गर्नुहोस्'),
+      description: t('Are you sure you want to update the master administrator password for this institutional account?', 'के तपाईं यस प्रशासक खाताको मुख्य पासवर्ड अद्यावधिक गर्न चाहनुहुन्छ?'),
+      itemName: configForm.adminUsername,
+      confirmText: t('Update Password', 'पासवर्ड सुरक्षित गर्नुहोस्'),
+      action: () => {
+        const updated = {
+          ...configForm,
+          adminPassword: newPass,
+        };
+        setConfigForm(updated);
+        onUpdateSecurityConfig(updated);
+        setCurrentPass('');
+        setNewPass('');
+        setConfirmPass('');
+        setCredSuccess(t('Master password updated successfully!', 'प्रशासक पासवर्ड सफलतापूर्वक अद्यावधिक गरियो!'));
+        onShowToast(t('Master administrator password changed.', 'पासवर्ड परिवर्तन गरियो।'));
+      }
+    });
   };
 
   const handleSaveSecuritySettings = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateSecurityConfig(configForm);
-    onShowToast(t('Security policies & routing configuration saved.', 'सुरक्षा नियम तथा रुटिङ कन्फिगरेसन सुरक्षित गरियो।'));
+    setConfirmState({
+      isOpen: true,
+      variant: 'update',
+      title: t('Confirm Security Configuration Updates', 'सुरक्षा कन्फिगरेसन अद्यावधिक पुष्टि गर्नुहोस्'),
+      description: t('Are you sure you want to apply these security policies, lockout durations, and secret routing rules?', 'के तपाईं सुरक्षा नियम, लकआउट समय र गुप्त रुटिङ कन्फिगरेसन लागू गर्न निश्चित हुनुहुन्छ?'),
+      itemName: t('Security & Access Rules', 'सुरक्षा तथा पहुँच नियम'),
+      confirmText: t('Save Security Settings', 'सुरक्षा नियम सुरक्षित गर्नुहोस्'),
+      action: () => {
+        onUpdateSecurityConfig(configForm);
+        onShowToast(t('Security policies & routing configuration saved.', 'सुरक्षा नियम तथा रुटिङ कन्फिगरेसन सुरक्षित गरियो।'));
+      }
+    });
   };
 
   const handleExportAuditLogs = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(auditLogs, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `ishwari_security_audit_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    setConfirmState({
+      isOpen: true,
+      variant: 'download',
+      title: t('Confirm Audit Log Export', 'अडिट लग डाउनलोड पुष्टि गर्नुहोस्'),
+      description: t('Are you sure you want to export and download the complete security audit trail as JSON?', 'के तपाईं सुरक्षा अडिट लगको सम्पूर्ण फाइल JSON मा डाउनलोड गर्न चाहनुहुन्छ?'),
+      itemName: `ishwari_security_audit_${new Date().toISOString().split('T')[0]}.json (${auditLogs.length} entries)`,
+      confirmText: t('Download Log Archive', 'लग डाउनलोड गर्नुहोस्'),
+      action: () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(auditLogs, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `ishwari_security_audit_${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        onShowToast(t('Security audit logs downloaded.', 'अडिट लग डाउनलोड गरियो।'));
+      }
+    });
+  };
+
+  const handleClearAuditLogsPrompt = () => {
+    setConfirmState({
+      isOpen: true,
+      variant: 'delete',
+      title: t('Confirm Security Audit Log Clear', 'सुरक्षा अडिट लग मेटाउन पुष्टि गर्नुहोस्'),
+      description: t('Are you sure you want to permanently clear all security audit records? This cannot be recovered.', 'के तपाईं सबै सुरक्षा अडिट लगहरू मेटाउन निश्चित हुनुहुन्छ?'),
+      itemName: `${auditLogs.length} ${t('Audit Entries', 'अडिट लगहरू')}`,
+      confirmText: t('Clear All Logs', 'लग सफा गर्नुहोस्'),
+      action: () => {
+        onClearAuditLogs();
+        onShowToast(t('Audit logs cleared.', 'अडिट लगहरू मेटाइयो।'));
+      }
+    });
   };
 
   const filteredLogs = auditLogs.filter(log => {
@@ -105,7 +170,19 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      <ConfirmationModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.action}
+        variant={confirmState.variant}
+        title={confirmState.title}
+        description={confirmState.description}
+        itemName={confirmState.itemName}
+        confirmText={confirmState.confirmText}
+        cancelText={t('Cancel', 'रद्द गर्नुहोस्')}
+      />
+
       {/* SECURITY OVERVIEW BANNER */}
       <div className="p-5 rounded-2xl bg-slate-900 text-white border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3">
@@ -256,7 +333,7 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({
                   type="text"
                   value={configForm.adminRouteSlug}
                   onChange={(e) => setConfigForm(prev => ({ ...prev, adminRouteSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, '') }))}
-                  placeholder="admin-user"
+                  placeholder="admin-portal"
                   className="w-full px-3 py-2 bg-transparent text-slate-900 dark:text-white focus:outline-hidden font-bold"
                   required
                 />
@@ -412,7 +489,7 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({
             </button>
             <button
               type="button"
-              onClick={onClearAuditLogs}
+              onClick={handleClearAuditLogsPrompt}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/50 text-xs font-medium hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />

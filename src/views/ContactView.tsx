@@ -12,6 +12,7 @@ import {
   Building2,
   HelpCircle
 } from 'lucide-react';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 interface ContactViewProps {
   lang: Language;
@@ -24,6 +25,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, school, onSendMe
   const t = (en: string, np: string) => (isNp ? np : en);
 
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -34,6 +36,10 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, school, onSendMe
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmedSubmit = () => {
     if (onSendMessage) {
       onSendMessage({
         id: Date.now(),
@@ -50,7 +56,23 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, school, onSendMe
   };
 
   return (
-    <div className="py-12 bg-white dark:bg-slate-950">
+    <div className="py-12 bg-white dark:bg-slate-950 relative">
+      {/* Confirmation Modal for Transmitting Inquiry */}
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmedSubmit}
+        variant="create"
+        title={t('Confirm Inquiry Submission', 'सन्देश पठाउन पुष्टि गर्नुहोस्')}
+        description={t(
+          'Are you sure you want to transmit this inquiry to Ishwari Secondary School administrative desk?',
+          'के तपाईं यो सन्देश विद्यालय प्रशासनमा पठाउन निश्चित हुनुहुन्छ?'
+        )}
+        itemName={`${formData.name} (${formData.phone} • ${formData.subject})`}
+        confirmText={t('Submit Inquiry', 'सन्देश पठाउनुहोस्')}
+        cancelText={t('Review Form', 'फारम पुनरावलोकन गर्नुहोस्')}
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="border-b border-slate-200 dark:border-slate-800 pb-6">
           <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1E40AF]">

@@ -84,8 +84,19 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ lang, items = [] }) =>
               key={item.id}
               className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shadow-2xs flex flex-col hover:border-[#1E40AF]/40 transition group"
             >
-              <div className="h-44 bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center border-b border-slate-200 dark:border-slate-800 group-hover:scale-[1.02] transition">
-                {renderIcon(item.iconType)}
+              <div className="h-48 bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center border-b border-slate-200 dark:border-slate-800 overflow-hidden relative">
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt={item.title_en}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="group-hover:scale-105 transition-transform duration-300">
+                    {renderIcon(item.iconType || 'camera')}
+                  </div>
+                )}
               </div>
               <div className="p-5 space-y-1.5">
                 <span className="text-[10px] uppercase font-mono font-bold text-[#1E40AF] bg-[#1E40AF]/10 px-2 py-0.5 rounded">

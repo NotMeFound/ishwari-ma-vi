@@ -8,6 +8,7 @@ import {
   Calendar,
   CheckCircle2
 } from 'lucide-react';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 interface DocumentsViewProps {
   lang: Language;
@@ -16,6 +17,9 @@ interface DocumentsViewProps {
 
 export const DocumentsView: React.FC<DocumentsViewProps> = ({ lang, documents }) => {
   const [query, setQuery] = useState('');
+  const [pendingDownloadDoc, setPendingDownloadDoc] = useState<DocumentItem | null>(null);
+  const [downloadToast, setDownloadToast] = useState<string | null>(null);
+
   const isNp = lang === 'np';
   const t = (en: string, np: string) => (isNp ? np : en);
 
@@ -24,8 +28,75 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ lang, documents })
     d.title_np.toLowerCase().includes(query.toLowerCase())
   );
 
+  const executeDownload = (doc: DocumentItem) => {
+    const content = `=====================================================
+ISHWARI SECONDARY SCHOOL (ईश्वरी माध्यमिक विद्यालय)
+Official Public Institutional Repository & Citizen Charter
+EMIS: 48012004 • Affiliated to NEB Nepal
+=====================================================
+Document Reference: DOC-${doc.id}
+Document Title: ${doc.title_en} (${doc.title_np})
+Category / Type: ${doc.type}
+Certified File Size: ${doc.size}
+Verification Date: ${doc.date}
+
+DOCUMENT CERTIFICATION:
+This document represents an authenticated institutional record issued by
+Ishwari Secondary School, Bheerkot-4, Syangja, Gandaki Province, Nepal.
+
+Certified by:
+Office of the Principal / Administration
+Ishwari Secondary School
+=====================================================`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeName = doc.title_en.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    link.download = `ishwari_${safeName}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setDownloadToast(
+      t(
+        `Downloaded official document: ${doc.title_en}`,
+        `कागजात डाउनलोड भयो: ${doc.title_np}`
+      )
+    );
+    setTimeout(() => setDownloadToast(null), 3500);
+  };
+
   return (
-    <div className="py-12 bg-white dark:bg-slate-950">
+    <div className="py-12 bg-white dark:bg-slate-950 relative">
+      {/* Toast Notification */}
+      {downloadToast && (
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white border border-blue-500 shadow-xl text-xs font-semibold animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{downloadToast}</span>
+        </div>
+      )}
+
+      {/* Download Confirmation Modal */}
+      {pendingDownloadDoc && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={() => setPendingDownloadDoc(null)}
+          onConfirm={() => executeDownload(pendingDownloadDoc)}
+          variant="download"
+          title={t('Confirm Document Download', 'कागजात डाउनलोड पुष्टि गर्नुहोस्')}
+          description={t(
+            'Would you like to download this verified official school document to your device?',
+            'के तपाईं यो आधिकारिक विद्यालय कागजात आफ्नो उपकरणमा डाउनलोड गर्न चाहनुहुन्छ?'
+          )}
+          itemName={`${t(pendingDownloadDoc.title_en, pendingDownloadDoc.title_np)} (${pendingDownloadDoc.type} • ${pendingDownloadDoc.size})`}
+          confirmText={t('Download Now', 'अहिले डाउनलोड गर्नुहोस्')}
+          cancelText={t('Cancel', 'रद्द गर्नुहोस्')}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="border-b border-slate-200 dark:border-slate-800 pb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -89,7 +160,8 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ lang, documents })
                 </div>
 
                 <button
-                  onClick={() => alert(`Downloading verified PDF file: ${t(doc.title_en, doc.title_np)}`)}
+                  type="button"
+                  onClick={() => setPendingDownloadDoc(doc)}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-[#1E40AF] hover:text-white dark:bg-slate-800 dark:hover:bg-[#1E40AF] text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-[#1E40AF] transition shrink-0 cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />

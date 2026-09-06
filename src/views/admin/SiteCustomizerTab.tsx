@@ -12,6 +12,7 @@ import {
   Layers,
   Layout
 } from 'lucide-react';
+import { ConfirmationModal, ConfirmationVariant } from '../../components/ConfirmationModal';
 
 interface SiteCustomizerTabProps {
   lang: Language;
@@ -35,23 +36,59 @@ export const SiteCustomizerTab: React.FC<SiteCustomizerTabProps> = ({
   const isNp = lang === 'np';
   const t = (en: string, np: string) => (isNp ? np : en);
 
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    itemName: string;
+    confirmText: string;
+    variant: ConfirmationVariant;
+    action: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    itemName: '',
+    confirmText: 'Confirm',
+    variant: 'warning',
+    action: () => {}
+  });
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateSiteConfig(form);
-    onShowToast(t('Site content and customizer settings saved successfully!', 'वेबसाइटको रूपरेखा र सामग्रीहरू सुरक्षित गरियो!'));
+    setConfirmState({
+      isOpen: true,
+      variant: 'update',
+      title: t('Confirm Configuration Update', 'सेटिङ अद्यावधिक पुष्टि गर्नुहोस्'),
+      description: t('Are you sure you want to apply and save these website customization changes across the portal?', 'के तपाईं वेबसाइटको रूपरेखा र सामग्रीका नयाँ सेटिङहरू सुरक्षित गर्न चाहनुहुन्छ?'),
+      itemName: t('Site Layout & Appearance Settings', 'वेबसाइट बनावट तथा प्रदर्शन सेटिङ'),
+      confirmText: t('Save Configuration', 'सेटिङ सुरक्षित गर्नुहोस्'),
+      action: () => {
+        onUpdateSiteConfig(form);
+        onShowToast(t('Site content and customizer settings saved successfully!', 'वेबसाइटको रूपरेखा र सामग्रीहरू सुरक्षित गरियो!'));
+      }
+    });
   };
 
   const handleReset = () => {
-    if (window.confirm(t('Reset customizer to default settings?', 'के तपाईं वेबसाइट सेटिङहरू डिफल्टमा फर्काउन चाहनुहुन्छ?'))) {
-      const resetConfig: SiteCustomizerConfig = {
-        ...siteConfig,
-        primaryColor: '#1E3A8A',
-        primaryColorName: 'Academic Navy',
-      };
-      setForm(resetConfig);
-      onUpdateSiteConfig(resetConfig);
-      onShowToast(t('Reset to default settings.', 'डिफल्ट सेटिङहरूमा फिर्ता गरियो।'));
-    }
+    setConfirmState({
+      isOpen: true,
+      variant: 'delete',
+      title: t('Confirm Customizer Reset', 'डिफल्ट सेटिङ रिसेट पुष्टि गर्नुहोस्'),
+      description: t('Are you sure you want to reset all site customization parameters back to defaults?', 'के तपाईं वेबसाइट सेटिङहरू डिफल्टमा फर्काउन चाहनुहुन्छ?'),
+      itemName: t('Customizer Settings', 'कस्टमाइजर सेटिङ'),
+      confirmText: t('Reset to Defaults', 'डिफल्टमा फर्काउनुहोस्'),
+      action: () => {
+        const resetConfig: SiteCustomizerConfig = {
+          ...siteConfig,
+          primaryColor: '#1E3A8A',
+          primaryColorName: 'Academic Navy',
+        };
+        setForm(resetConfig);
+        onUpdateSiteConfig(resetConfig);
+        onShowToast(t('Reset to default settings.', 'डिफल्ट सेटिङहरूमा फिर्ता गरियो।'));
+      }
+    });
   };
 
   const toggleSection = (key: keyof SiteCustomizerConfig['sectionVisibility']) => {
@@ -65,7 +102,18 @@ export const SiteCustomizerTab: React.FC<SiteCustomizerTabProps> = ({
   };
 
   return (
-    <form onSubmit={handleSave} className="space-y-8">
+    <form onSubmit={handleSave} className="space-y-8 relative">
+      <ConfirmationModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.action}
+        variant={confirmState.variant}
+        title={confirmState.title}
+        description={confirmState.description}
+        itemName={confirmState.itemName}
+        confirmText={confirmState.confirmText}
+        cancelText={t('Cancel', 'रद्द गर्नुहोस्')}
+      />
       {/* 1. TOP ANNOUNCEMENT TICKER CUSTOMIZER */}
       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 shadow-xs">
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3.5">

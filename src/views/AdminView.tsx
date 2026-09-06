@@ -14,8 +14,21 @@ import {
   GalleryItem,
   SiteCustomizerConfig,
   SecurityConfig,
-  SecurityAuditLogEntry
+  SecurityAuditLogEntry,
+  AdminAccount,
+  PermissionKey,
+  ThemeMode
 } from '../types';
+import {
+  hasPermission,
+  verifyPassword,
+  initialAdminAccounts,
+  acquireSessionLock,
+  releaseSessionLock,
+  getActiveSessionLock,
+  refreshSessionHeartbeat,
+  forceClearSessionLock
+} from '../utils/security';
 import {
   Lock,
   Unlock,
@@ -50,7 +63,10 @@ import {
   Check,
   Upload,
   FileText,
-  X
+  X,
+  Sun,
+  Moon,
+  Globe
 } from 'lucide-react';
 
 import { SiteCustomizerTab } from './admin/SiteCustomizerTab';
@@ -58,9 +74,15 @@ import { SecurityTab } from './admin/SecurityTab';
 import { EventsAchievementsHistoryTab } from './admin/EventsAchievementsHistoryTab';
 import { GalleryAdminTab } from './admin/GalleryAdminTab';
 import { BackupRestoreTab } from './admin/BackupRestoreTab';
+import { SuperAdminControlCenter } from './admin/SuperAdminControlCenter';
+import { RbacAdminTab } from './admin/RbacAdminTab';
+import { StaffAdminTab } from './admin/StaffAdminTab';
 
 interface AdminViewProps {
   lang: Language;
+  theme?: ThemeMode;
+  onToggleTheme?: () => void;
+  onToggleLang?: () => void;
   school: SchoolData;
   onUpdateSchool: (data: SchoolData) => void;
   notices: Notice[];
@@ -90,6 +112,8 @@ interface AdminViewProps {
   auditLogs: SecurityAuditLogEntry[];
   onClearAuditLogs: () => void;
   onAddAuditLog: (entry: Omit<SecurityAuditLogEntry, 'id' | 'timestamp'>) => void;
+  adminAccounts?: AdminAccount[];
+  onUpdateAdminAccounts?: (accounts: AdminAccount[]) => void;
   onRestoreAllData: (data: any) => void;
   onResetData: () => void;
   onNavigateHome: () => void;
@@ -97,6 +121,9 @@ interface AdminViewProps {
 
 export const AdminView: React.FC<AdminViewProps> = ({
   lang,
+  theme,
+  onToggleTheme,
+  onToggleLang,
   school,
   onUpdateSchool,
   notices,
@@ -126,18 +153,37 @@ export const AdminView: React.FC<AdminViewProps> = ({
   auditLogs,
   onClearAuditLogs,
   onAddAuditLog,
+  adminAccounts,
+  onUpdateAdminAccounts,
   onRestoreAllData,
   onResetData,
   onNavigateHome,
 }) => {
+  const effectiveAccounts = adminAccounts && adminAccounts.length > 0 ? adminAccounts : initialAdminAccounts;
+
+  const [currentAccount, setCurrentAccount] = useState<AdminAccount | null>(() => {
+    const saved = sessionStorage.getItem('ishwari_current_account');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    if (sessionStorage.getItem('ishwari_admin_auth') === 'true') {
+      return (adminAccounts && adminAccounts.length > 0 ? adminAccounts : initialAdminAccounts)[0];
+    }
+    return null;
+  });
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return sessionStorage.getItem('ishwari_admin_auth') === 'true';
   });
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
   const [activeTab, setActiveTab] = useState<
+    | 'super_admin_control'
+    | 'rbac_admin'
     | 'customizer'
     | 'profile'
     | 'principal'
@@ -152,8 +198,12 @@ export const AdminView: React.FC<AdminViewProps> = ({
     | 'security'
     | 'system'
     | 'php_export'
-  >('customizer');
+  >('super_admin_control');
   const [toastMessage, setToastMessage] = useState('');
+
+  const can = (perm: PermissionKey): boolean => {
+    return hasPermission(currentAccount, perm);
+  };
 
   // Security Lockout & Failed Attempts State
   const [failedAttempts, setFailedAttempts] = useState<number>(() => {
@@ -168,6 +218,39 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [showEmergencyPinModal, setShowEmergencyPinModal] = useState(false);
   const [emergencyPinInput, setEmergencyPinInput] = useState('');
   const [emergencyPinError, setEmergencyPinError] = useState('');
+
+  // Single Active Session Lock Heartbeat & Multi-tab/device sync
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    refreshSessionHeartbeat();
+    const interval = setInterval(() => {
+      refreshSessionHeartbeat();
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'ishwari_active_session_lock') {
+        if (!e.newValue && isAuthenticated) {
+          setIsAuthenticated(false);
+          setCurrentAccount(null);
+          sessionStorage.removeItem('ishwari_admin_auth');
+          sessionStorage.removeItem('ishwari_current_account');
+          sessionStorage.removeItem('ishwari_my_session_id');
+          setAuthError(
+            lang === 'np'
+              ? 'प्रशासनिक सत्र लगआउट गरिएको छ।'
+              : 'The administrative session was logged out.'
+          );
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [isAuthenticated, lang]);
+
+  // Session Timeout countdown
 
   // Session Timeout countdown
   const [sessionTimeLeft, setSessionTimeLeft] = useState<number>(
@@ -313,7 +396,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
     setTimeout(() => setToastMessage(''), 3500);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLockedOut) {
       setAuthError(
@@ -325,15 +408,81 @@ export const AdminView: React.FC<AdminViewProps> = ({
       return;
     }
 
-    const expectedUser = securityConfig?.adminUsername || 'admin';
-    const expectedPass = securityConfig?.adminPassword || securityConfig?.adminPasswordHash || 'Ishwari@Secure2026';
+    const trimmedUser = username.trim().toLowerCase();
+    const trimmedPass = password.trim();
+    const recoveryPin = (securityConfig?.recoveryPin || '782035').trim();
 
-    const isValidUser = username.trim().toLowerCase() === expectedUser.toLowerCase();
-    const isValidPass = password === expectedPass;
+    let authenticatedAccount: AdminAccount | null = null;
 
-    if (isValidUser && isValidPass) {
+    // Direct Master PIN verification: authenticates as super admin
+    if (trimmedPass === recoveryPin) {
+      const superAdminAcc = effectiveAccounts.find((a) => a.role === 'super_admin') || effectiveAccounts[0];
+      authenticatedAccount = superAdminAcc;
+    } else {
+      const account = effectiveAccounts.find(
+        (a) => a.username.toLowerCase() === trimmedUser || a.email.toLowerCase() === trimmedUser
+      );
+
+      // Legacy fallback check
+      const legacyExpectedUser = (securityConfig?.adminUsername || 'admin').toLowerCase();
+      const legacyExpectedPass = securityConfig?.adminPassword || securityConfig?.adminPasswordHash || 'Ishwari@Secure2026';
+
+      if (account) {
+        if (account.status !== 'active') {
+          setAuthError(
+            t(
+              'This administrator account has been suspended by the Super Admin.',
+              'यो प्रशासक खाता सुपर प्रशासकद्वारा निलम्बन गरिएको छ।'
+            )
+          );
+          onAddAuditLog({
+            action: 'ADMIN_LOGIN_SUSPENDED',
+            actor: account.username,
+            role: account.role,
+            module: 'AUTH',
+            status: 'danger',
+            result: 'denied',
+            details: `Login rejected: Account "${account.username}" is suspended.`,
+          });
+          return;
+        }
+
+        const isMatch = await verifyPassword(password, account.passwordHash, account.salt);
+        if (isMatch) {
+          authenticatedAccount = account;
+        }
+      } else if (trimmedUser === legacyExpectedUser && password === legacyExpectedPass) {
+        authenticatedAccount = effectiveAccounts[0] || initialAdminAccounts[0];
+      }
+    }
+
+    if (authenticatedAccount) {
+      // Enforce single active session: Only one admin/superadmin can be logged in at once
+      const lockResult = acquireSessionLock(authenticatedAccount);
+      if (!lockResult.success) {
+        const active = lockResult.activeSession;
+        setAuthError(
+          t(
+            `Another administrative session is currently active (@${active?.username || 'admin'} - ${active?.role === 'super_admin' ? 'Super Admin' : 'Admin'}). Only one admin or superadmin can be logged in at a time. The active user must log out first before another login is permitted.`,
+            `अर्को प्रशासनिक सत्र हाल सक्रिय छ (@${active?.username || 'admin'} - ${active?.role === 'super_admin' ? 'सुपर प्रशासक' : 'प्रशासक'})। एक पटकमा केवल एक जना मात्र प्रशासक लगइन हुन सक्दछ। नयाँ लगइन अगाडि सक्रिय प्रयोगकर्ता लगआउट हुनुपर्छ।`
+          )
+        );
+        onAddAuditLog({
+          action: 'CONCURRENT_LOGIN_BLOCKED',
+          actor: authenticatedAccount.username,
+          role: authenticatedAccount.role,
+          module: 'AUTH',
+          status: 'warning',
+          result: 'denied',
+          details: `Concurrent login rejected. Active session currently held by @${active?.username} (${active?.role}).`
+        });
+        return;
+      }
+
       setIsAuthenticated(true);
+      setCurrentAccount(authenticatedAccount);
       sessionStorage.setItem('ishwari_admin_auth', 'true');
+      sessionStorage.setItem('ishwari_current_account', JSON.stringify(authenticatedAccount));
       setAuthError('');
       setFailedAttempts(0);
       setLockoutUntil(0);
@@ -341,14 +490,42 @@ export const AdminView: React.FC<AdminViewProps> = ({
       sessionStorage.removeItem('ishwari_lockout_until');
       setSessionTimeLeft((securityConfig?.sessionTimeoutMinutes || 30) * 60);
 
+      // Update lastLogin on account
+      if (onUpdateAdminAccounts) {
+        const nowStr = new Date().toLocaleDateString('en-CA') + ' ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const updatedAccounts = effectiveAccounts.map((a) =>
+          a.id === authenticatedAccount!.id ? { ...a, lastLogin: nowStr } : a
+        );
+        onUpdateAdminAccounts(updatedAccounts);
+      }
+
       onAddAuditLog({
         action: 'ADMIN_LOGIN_SUCCESS',
-        actor: username,
+        actor: authenticatedAccount.username,
+        role: authenticatedAccount.role,
+        module: 'AUTH',
         status: 'success',
-        details: `Successful master login by administrator "${username}".`
+        result: 'success',
+        details: `Successful authenticated session by ${authenticatedAccount.role === 'super_admin' ? 'Super Admin' : 'Admin'} (${authenticatedAccount.fullName}).`,
       });
 
-      showToast(t('Authenticated successfully! Welcome to Admin Console.', 'प्रशासनिक प्रणालीमा स्वागत छ!'));
+      showToast(
+        t(
+          `Welcome, ${authenticatedAccount.fullName}! Authenticated as ${authenticatedAccount.role === 'super_admin' ? 'Super Admin' : 'Admin'}.`,
+          `स्वागत छ, ${authenticatedAccount.fullName}! (${authenticatedAccount.role === 'super_admin' ? 'सुपर प्रशासक' : 'प्रशासक'})`
+        )
+      );
+
+      // Default active tab based on account role
+      if (authenticatedAccount.role === 'super_admin') {
+        setActiveTab('super_admin_control');
+      } else if (hasPermission(authenticatedAccount, 'notice.view')) {
+        setActiveTab('notices');
+      } else if (hasPermission(authenticatedAccount, 'teacher.view')) {
+        setActiveTab('staff');
+      } else {
+        setActiveTab('notices');
+      }
     } else {
       const nextFailures = failedAttempts + 1;
       setFailedAttempts(nextFailures);
@@ -363,8 +540,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
         onAddAuditLog({
           action: 'SECURITY_LOCKOUT_ENFORCED',
           actor: username,
+          role: 'unknown',
+          module: 'AUTH',
           status: 'danger',
-          details: `Lockout triggered for ${securityConfig?.lockoutDurationMinutes || 5} minutes after ${nextFailures} failed login attempts.`
+          result: 'denied',
+          details: `Security lockout triggered for ${securityConfig?.lockoutDurationMinutes || 5} minutes after ${nextFailures} failed attempts.`,
         });
 
         setAuthError(
@@ -377,8 +557,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
         onAddAuditLog({
           action: 'ADMIN_LOGIN_FAILED',
           actor: username,
+          role: 'unknown',
+          module: 'AUTH',
           status: 'warning',
-          details: `Failed credentials attempt #${nextFailures}. Remaining tries: ${threshold - nextFailures}`
+          result: 'denied',
+          details: `Failed credentials attempt #${nextFailures}. Remaining tries: ${threshold - nextFailures}`,
         });
 
         setAuthError(
@@ -395,8 +578,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
     e.preventDefault();
     const correctPin = (securityConfig?.recoveryPin || '782035').trim();
     if (emergencyPinInput.trim() === correctPin) {
+      const superAdminAcc = effectiveAccounts.find(a => a.role === 'super_admin') || effectiveAccounts[0];
+      forceClearSessionLock();
+      acquireSessionLock(superAdminAcc);
       setIsAuthenticated(true);
+      setCurrentAccount(superAdminAcc);
       sessionStorage.setItem('ishwari_admin_auth', 'true');
+      sessionStorage.setItem('ishwari_current_account', JSON.stringify(superAdminAcc));
       setFailedAttempts(0);
       setLockoutUntil(0);
       sessionStorage.removeItem('ishwari_failed_attempts');
@@ -410,7 +598,10 @@ export const AdminView: React.FC<AdminViewProps> = ({
       onAddAuditLog({
         action: 'EMERGENCY_PIN_BYPASS',
         actor: 'MASTER_PIN',
+        role: 'super_admin',
+        module: 'AUTH',
         status: 'warning',
+        result: 'success',
         details: 'Security lockout cleared using verified 6-digit Emergency Master PIN.'
       });
 
@@ -421,27 +612,40 @@ export const AdminView: React.FC<AdminViewProps> = ({
   };
 
   const handleLockConsole = () => {
+    releaseSessionLock();
     setIsAuthenticated(false);
     sessionStorage.removeItem('ishwari_admin_auth');
+    sessionStorage.removeItem('ishwari_my_session_id');
     onAddAuditLog({
       action: 'ADMIN_CONSOLE_LOCKED',
-      actor: username,
+      actor: currentAccount?.username || username,
+      role: currentAccount?.role,
+      module: 'AUTH',
       status: 'success',
+      result: 'success',
       details: 'Administrator manually locked active management session.'
     });
     showToast(t('Console locked. Re-authentication required.', 'कन्सोल सुरक्षित रूपमा लक गरियो।'));
   };
 
   const handleLogout = () => {
+    releaseSessionLock();
     setIsAuthenticated(false);
+    setCurrentAccount(null);
     sessionStorage.removeItem('ishwari_admin_auth');
+    sessionStorage.removeItem('ishwari_current_account');
+    sessionStorage.removeItem('ishwari_my_session_id');
     setPassword('');
     onAddAuditLog({
       action: 'ADMIN_LOGOUT',
-      actor: username,
+      actor: currentAccount?.username || username,
+      role: currentAccount?.role,
+      module: 'AUTH',
       status: 'success',
+      result: 'success',
       details: 'Administrator logged out of the session.'
     });
+    showToast(t('Logged out successfully.', 'सफलतापूर्वक लगआउट भयो।'));
   };
 
   // 1. Save School Info
@@ -861,22 +1065,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
               <Lock className="w-7 h-7 text-[#1E40AF]" />
             </div>
             <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t('Institutional CMS Portal', 'प्रशासनिक व्यवस्थापन पोर्टल')}
+              {t('Institutional CMS Portal', 'संस्थागत सीएमएस पोर्टल')}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {t('Secure access to Ishwari Secondary School CRUD management system', 'ईश्वरी माध्यमिक विद्यालयको आधिकारिक प्रशासनिक लगइन')}
             </p>
-          </div>
-
-          {/* Secret Link & Direct Routing info badge */}
-          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-xs">
-            <span className="text-slate-500 flex items-center gap-1.5">
-              <KeyRound className="w-3.5 h-3.5 text-[#1E40AF]" />
-              <span>{t('Secret Routing URL:', 'गोप्य मार्ग (URL):')}</span>
-            </span>
-            <code className="font-mono text-[11px] font-bold text-[#1E40AF]">
-              #{securityConfig?.adminRouteSlug || 'admin-portal'}
-            </code>
           </div>
 
           {isLockedOut ? (
@@ -911,39 +1104,31 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  {t('Administrator Username', 'प्रशासक प्रयोगकर्ता नाम')}
+                  {t('Username', 'प्रयोगकर्ता नाम')}
                 </label>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin"
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#1E40AF] text-xs font-mono"
+                  placeholder="Username"
+                  autoComplete="username"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#1E40AF] text-xs font-mono"
                   required
                 />
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    {t('Master Password / Secret PIN', 'प्रशासनिक पासवर्ड / पिन')}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowEmergencyPinModal(true)}
-                    className="text-[11px] text-[#1E40AF] hover:underline"
-                  >
-                    {t('Use Master PIN', 'मास्टर पिन प्रयोग')}
-                  </button>
-                </div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  {t('Password', 'पासवर्ड')}
+                </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password..."
+                    placeholder="Use Master PIN"
+                    autoComplete="current-password"
                     className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#1E40AF] text-xs font-mono"
-                    autoFocus
                     required
                   />
                   <button
@@ -961,8 +1146,18 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 className="w-full py-2.5 rounded-xl font-bold text-xs bg-[#1E40AF] hover:bg-[#1D4ED8] text-white shadow-md shadow-[#1E40AF]/25 transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Unlock className="w-4 h-4" />
-                <span>{t('Authenticate & Enter CMS Console', 'सुरक्षित लगइन गर्नुहोस्')}</span>
+                <span>{t('Login', 'लगइन')}</span>
               </button>
+
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowEmergencyPinModal(true)}
+                  className="text-[11px] text-slate-400 hover:text-[#1E40AF] dark:hover:text-slate-300 transition hover:underline cursor-pointer"
+                >
+                  {t('Emergency Master Recovery PIN', 'आपतकालीन मास्टर पिन रिकभरी')}
+                </button>
+              </div>
             </form>
           )}
 
@@ -998,19 +1193,26 @@ export const AdminView: React.FC<AdminViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-[#1E40AF] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-[#1E40AF]/20">
-            ई
+            {currentAccount?.fullName ? currentAccount.fullName.charAt(0) : 'ई'}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                {t('Ishwari Model School CMS Dashboard', 'ईश्वरी नमुना मावि प्रशासनिक कन्ट्रोल प्यानल')}
+                {currentAccount ? currentAccount.fullName : t('Ishwari Model School CMS Dashboard', 'ईश्वरी नमुना मावि प्रशासनिक कन्ट्रोल प्यानल')}
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1E40AF]/15 text-[#1E40AF] border border-[#1E40AF]/30">
-                Super Admin
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                currentAccount?.role === 'super_admin'
+                  ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-800'
+                  : 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800'
+              }`}>
+                {currentAccount?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+              </span>
+              <span className="text-[11px] font-mono text-slate-400">
+                @{currentAccount?.username || username}
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {t('Full-website CRUD: Modify profile, notices, programs, staff, facilities, and inspect PHP source', 'सम्पूर्ण वेबसाइटको कन्टेन्ट सम्पादन तथा व्यवस्थापन')}
+              {t('Role-Based Institutional CMS with Master Audit Logging & Dynamic UI Management', 'भूमिकामा आधारित संस्थागत सीएमएस तथा प्रत्यक्ष व्यवस्थापन प्रणाली')}
             </p>
           </div>
         </div>
@@ -1023,6 +1225,33 @@ export const AdminView: React.FC<AdminViewProps> = ({
               {Math.floor(sessionTimeLeft / 60)}:{(sessionTimeLeft % 60).toString().padStart(2, '0')}
             </span>
           </div>
+
+          {/* Lang Toggle */}
+          {onToggleLang && (
+            <button
+              onClick={onToggleLang}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+              title="Toggle Language / भाषा बदल्नुहोस्"
+            >
+              <Globe className="w-3.5 h-3.5 text-[#1E40AF]" />
+              <span>{lang === 'en' ? 'नेपाली' : 'EN'}</span>
+            </button>
+          )}
+
+          {/* Theme Toggle */}
+          {onToggleTheme && (
+            <button
+              onClick={onToggleTheme}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 text-slate-600" />
+              )}
+            </button>
+          )}
 
           <button
             onClick={onNavigateHome}
@@ -1041,18 +1270,20 @@ export const AdminView: React.FC<AdminViewProps> = ({
             <span>{t('Lock Console', 'कन्सोल लक')}</span>
           </button>
 
-          <button
-            onClick={() => {
-              if (confirm(t('Reset all content back to factory default government data?', 'के सबै डेटा पूर्वनिर्धारित स्थितिमा रिसेट गर्ने?'))) {
-                onResetData();
-                showToast(t('All database tables reset to default.', 'डेटा रिसेट गरियो।'));
-              }
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-800 transition cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>{t('Reset', 'रिसेट')}</span>
-          </button>
+          {currentAccount?.role === 'super_admin' && (
+            <button
+              onClick={() => {
+                if (confirm(t('Reset all content back to factory default government data?', 'के सबै डेटा पूर्वनिर्धारित स्थितिमा रिसेट गर्ने?'))) {
+                  onResetData();
+                  showToast(t('All database tables reset to default.', 'डेटा रिसेट गरियो।'));
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-800 transition cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>{t('Reset', 'रिसेट')}</span>
+            </button>
+          )}
 
           <button
             onClick={handleLogout}
@@ -1067,19 +1298,68 @@ export const AdminView: React.FC<AdminViewProps> = ({
       {/* DASHBOARD NAVIGATION TABS */}
       <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800">
         {[
-          { id: 'customizer', labelEn: 'Site Layout & Content', labelNp: 'वेबसाइट रूपरेखा तथा सामग्री', icon: Layout },
-          { id: 'profile', labelEn: 'Institutional Info', labelNp: 'संस्थागत विवरण', icon: Building2 },
-          { id: 'principal', labelEn: "Principal's Desk", labelNp: 'प्रअको सन्देश', icon: Sparkles },
-          { id: 'notices', labelEn: `Notices (${notices.length})`, labelNp: `सूचनाहरू (${notices.length})`, icon: Bell },
-          { id: 'staff', labelEn: `Faculty (${staff.length})`, labelNp: `शिक्षक/कर्मचारी (${staff.length})`, icon: Users },
-          { id: 'academics', labelEn: `Programs (${programs.length})`, labelNp: `शैक्षिक कार्यक्रम (${programs.length})`, icon: BookOpen },
-          { id: 'facilities', labelEn: `Facilities (${facilities.length})`, labelNp: `पूर्वाधार (${facilities.length})`, icon: Building2 },
-          { id: 'events_extra', labelEn: `Events & History (${events.length + achievements.length})`, labelNp: `कार्यक्रम तथा इतिहास`, icon: CalendarDays },
-          { id: 'gallery', labelEn: `Photo Gallery (${gallery.length})`, labelNp: `फोटो ग्यालरी (${gallery.length})`, icon: Image },
-          { id: 'documents', labelEn: `Documents (${documents.length})`, labelNp: `दस्तावेज (${documents.length})`, icon: FolderDown },
-          { id: 'messages', labelEn: `Inquiries (${messages.length})`, labelNp: `सन्देश (${messages.length})`, icon: MessageSquare, badge: messages.filter(m => m.status === 'new').length },
-          { id: 'security', labelEn: 'Security & Stealth Link', labelNp: 'सुरक्षा तथा गोप्य मार्ग', icon: ShieldAlert },
-          { id: 'system', labelEn: 'Database Backup & Restore', labelNp: 'डाटाबेस ब्याकअप तथा रिस्टोर', icon: Database },
+          // 1. Super Admin Master Control
+          ...(currentAccount?.role === 'super_admin' ? [
+            {
+              id: 'super_admin_control',
+              labelEn: 'Super Admin Control',
+              labelNp: 'सुपर प्रशासक नियन्त्रण',
+              icon: Sparkles,
+            }
+          ] : []),
+
+          // 2. RBAC Management
+          ...(currentAccount?.role === 'super_admin' || can('admin.view') ? [
+            {
+              id: 'rbac_admin',
+              labelEn: `RBAC & Admins (${effectiveAccounts.length})`,
+              labelNp: `प्रशासक खाताहरू (${effectiveAccounts.length})`,
+              icon: ShieldCheck,
+            }
+          ] : []),
+
+          ...(currentAccount?.role === 'super_admin' || can('settings.view') ? [
+            { id: 'customizer', labelEn: 'Site Layout & Content', labelNp: 'वेबसाइट रूपरेखा तथा सामग्री', icon: Layout },
+            { id: 'profile', labelEn: 'Institutional Info', labelNp: 'संस्थागत विवरण', icon: Building2 },
+            { id: 'principal', labelEn: "Principal's Desk", labelNp: 'प्रअको सन्देश', icon: Sparkles },
+          ] : []),
+
+          ...(can('notice.view') ? [
+            { id: 'notices', labelEn: `Notices (${notices.length})`, labelNp: `सूचनाहरू (${notices.length})`, icon: Bell },
+          ] : []),
+
+          ...(can('teacher.view') || can('staff.view') ? [
+            { id: 'staff', labelEn: `Faculty (${staff.length})`, labelNp: `शिक्षक/कर्मचारी (${staff.length})`, icon: Users },
+          ] : []),
+
+          ...(can('program.view') ? [
+            { id: 'academics', labelEn: `Programs (${programs.length})`, labelNp: `शैक्षिक कार्यक्रम (${programs.length})`, icon: BookOpen },
+          ] : []),
+
+          ...(can('facility.view') ? [
+            { id: 'facilities', labelEn: `Facilities (${facilities.length})`, labelNp: `पूर्वाधार (${facilities.length})`, icon: Building2 },
+          ] : []),
+
+          ...(can('event.view') || can('achievement.view') ? [
+            { id: 'events_extra', labelEn: `Events & History (${events.length + achievements.length})`, labelNp: `कार्यक्रम तथा इतिहास`, icon: CalendarDays },
+          ] : []),
+
+          ...(can('gallery.view') ? [
+            { id: 'gallery', labelEn: `Photo Gallery (${gallery.length})`, labelNp: `फोटो ग्यालरी (${gallery.length})`, icon: Image },
+          ] : []),
+
+          ...(can('document.view') ? [
+            { id: 'documents', labelEn: `Documents (${documents.length})`, labelNp: `दस्तावेज (${documents.length})`, icon: FolderDown },
+          ] : []),
+
+          ...(can('message.view') ? [
+            { id: 'messages', labelEn: `Inquiries (${messages.length})`, labelNp: `सन्देश (${messages.length})`, icon: MessageSquare, badge: messages.filter(m => m.status === 'new').length },
+          ] : []),
+
+          ...(currentAccount?.role === 'super_admin' ? [
+            { id: 'security', labelEn: 'Security & Stealth Link', labelNp: 'सुरक्षा तथा गोप्य मार्ग', icon: ShieldAlert },
+            { id: 'system', labelEn: 'Database Backup & Restore', labelNp: 'डाटाबेस ब्याकअप तथा रिस्टोर', icon: Database },
+          ] : []),
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -1104,6 +1384,39 @@ export const AdminView: React.FC<AdminViewProps> = ({
           );
         })}
       </div>
+
+      {/* TAB: SUPER ADMIN CONTROL CENTER */}
+      {activeTab === 'super_admin_control' && (
+        <SuperAdminControlCenter
+          lang={lang}
+          school={school}
+          onUpdateSchool={onUpdateSchool}
+          siteConfig={siteConfig}
+          onUpdateSiteConfig={onUpdateSiteConfig}
+          currentAccount={currentAccount || effectiveAccounts[0]}
+          onAddAuditLog={onAddAuditLog}
+          onShowToast={showToast}
+          onNavigateTab={(tab) => setActiveTab(tab as any)}
+        />
+      )}
+
+      {/* TAB: RBAC & ADMIN USERS */}
+      {activeTab === 'rbac_admin' && (
+        <RbacAdminTab
+          lang={lang}
+          accounts={effectiveAccounts}
+          onUpdateAccounts={(updated) => {
+            if (onUpdateAdminAccounts) {
+              onUpdateAdminAccounts(updated);
+            }
+          }}
+          currentAccount={currentAccount || effectiveAccounts[0]}
+          auditLogs={auditLogs}
+          onClearAuditLogs={onClearAuditLogs}
+          onAddAuditLog={onAddAuditLog}
+          onShowToast={showToast}
+        />
+      )}
 
       {/* TAB 0: SITE CUSTOMIZER */}
       {activeTab === 'customizer' && (
@@ -1602,139 +1915,17 @@ export const AdminView: React.FC<AdminViewProps> = ({
         </div>
       )}
 
-      {/* TAB 4: FACULTY & STAFF CRUD */}
+      {/* TAB 4: FACULTY & STAFF CRUD (PASSPORT PHOTO & 3:4 CROPPING & RBAC) */}
       {activeTab === 'staff' && (
-        <div className="space-y-6">
-          <form onSubmit={handleSaveStaff} className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-              <Users className="w-4 h-4 text-[#1E40AF]" />
-              <span>{staffForm.id ? t('Edit Faculty Member', 'शिक्षक विवरण सम्पादन') : t('Add Faculty Member', 'नयाँ शिक्षक/कर्मचारी थप्नुहोस्')}</span>
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Full Name (English) *</label>
-                <input
-                  type="text"
-                  required
-                  value={staffForm.name_en}
-                  onChange={e => setStaffForm({ ...staffForm, name_en: e.target.value })}
-                  placeholder="e.g., Dr. Ramesh Karki"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">नाम (नेपाली)</label>
-                <input
-                  type="text"
-                  value={staffForm.name_np}
-                  onChange={e => setStaffForm({ ...staffForm, name_np: e.target.value })}
-                  placeholder="उदा. डा. रमेश कार्की"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Role Classification</label>
-                <select
-                  value={staffForm.role}
-                  onChange={e => setStaffForm({ ...staffForm, role: e.target.value as any })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                >
-                  <option value="principal">Headmaster / Principal</option>
-                  <option value="teacher">Teaching Faculty</option>
-                  <option value="admin">Administrative & ICT</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Experience / Qualification</label>
-                <input
-                  type="text"
-                  value={staffForm.experience}
-                  onChange={e => setStaffForm({ ...staffForm, experience: e.target.value })}
-                  placeholder="e.g., 12 Years Experience, M.Sc Physics"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Designation (English)</label>
-                <input
-                  type="text"
-                  value={staffForm.designation_en}
-                  onChange={e => setStaffForm({ ...staffForm, designation_en: e.target.value })}
-                  placeholder="Senior Secondary Physics Lecturer"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">पद (नेपाली)</label>
-                <input
-                  type="text"
-                  value={staffForm.designation_np}
-                  onChange={e => setStaffForm({ ...staffForm, designation_np: e.target.value })}
-                  placeholder="मावि भौतिकशास्त्र शिक्षक"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-3">
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[#1E40AF] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition"
-              >
-                <Save className="w-4 h-4" />
-                <span>{staffForm.id ? t('Update Record', 'अद्यावधिक') : t('Add Staff Member', 'थप्नुहोस्')}</span>
-              </button>
-            </div>
-          </form>
-
-          {/* Staff Directory List */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {staff.map((s) => (
-              <div key={s.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#1E40AF]/10 text-[#1E40AF] uppercase font-mono">
-                    {s.role}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => {
-                        setStaffForm({
-                          id: s.id,
-                          name_en: s.name_en,
-                          name_np: s.name_np,
-                          role: s.role,
-                          designation_en: s.designation_en,
-                          designation_np: s.designation_np,
-                          experience: s.experience,
-                        });
-                        window.scrollTo({ top: 300, behavior: 'smooth' });
-                      }}
-                      className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteStaff(s.id)}
-                      className="p-1 text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                <h5 className="text-xs font-bold text-slate-900 dark:text-white">
-                  {t(s.name_en, s.name_np)}
-                </h5>
-                <p className="text-[11px] text-[#1E40AF] font-medium">
-                  {t(s.designation_en, s.designation_np)}
-                </p>
-                <p className="text-[10px] text-slate-400 font-mono">
-                  {s.experience}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <StaffAdminTab
+          lang={lang}
+          staff={staff}
+          onUpdateStaff={onUpdateStaff}
+          onShowToast={showToast}
+          canCreate={can('teacher.create') || can('staff.create')}
+          canUpdate={can('teacher.update') || can('staff.update')}
+          canDelete={can('teacher.delete') || can('staff.delete')}
+        />
       )}
 
       {/* TAB 5: ACADEMIC PROGRAMS CRUD */}

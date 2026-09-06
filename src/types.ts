@@ -44,6 +44,12 @@ export interface StaffMember {
   designation_en: string;
   designation_np: string;
   experience: string;
+  image?: string; // passport-size photograph (base64 or URL)
+  department_en?: string;
+  department_np?: string;
+  qualification_en?: string;
+  qualification_np?: string;
+  isActive?: boolean;
 }
 
 export interface Facility {
@@ -122,13 +128,85 @@ export interface GalleryItem {
   title_en: string;
   title_np: string;
   category: 'science' | 'sports' | 'academics' | 'culture' | 'community';
-  iconType: 'science' | 'sports' | 'academics' | 'culture' | 'community' | 'camera';
+  iconType?: 'science' | 'sports' | 'academics' | 'culture' | 'community' | 'camera';
+  image?: string; // base64 or URL (< 1MB)
+  date?: string;
+}
+
+export type AdminRole = 'super_admin' | 'admin';
+
+export type PermissionKey =
+  | 'notice.view'
+  | 'notice.create'
+  | 'notice.update'
+  | 'notice.delete'
+  | 'teacher.view'
+  | 'teacher.create'
+  | 'teacher.update'
+  | 'teacher.delete'
+  | 'staff.view'
+  | 'staff.create'
+  | 'staff.update'
+  | 'staff.delete'
+  | 'gallery.view'
+  | 'gallery.create'
+  | 'gallery.update'
+  | 'gallery.delete'
+  | 'program.view'
+  | 'program.create'
+  | 'program.update'
+  | 'program.delete'
+  | 'facility.view'
+  | 'facility.create'
+  | 'facility.update'
+  | 'facility.delete'
+  | 'event.view'
+  | 'event.create'
+  | 'event.update'
+  | 'event.delete'
+  | 'achievement.view'
+  | 'achievement.create'
+  | 'achievement.update'
+  | 'achievement.delete'
+  | 'document.view'
+  | 'document.create'
+  | 'document.update'
+  | 'document.delete'
+  | 'message.view'
+  | 'message.delete'
+  | 'school.view'
+  | 'school.update'
+  | 'settings.view'
+  | 'settings.update'
+  | 'admin.view'
+  | 'admin.create'
+  | 'admin.update'
+  | 'admin.delete'
+  | 'security.view'
+  | 'security.update'
+  | 'backup.create'
+  | 'backup.restore';
+
+export interface AdminAccount {
+  id: string;
+  username: string;
+  email: string;
+  fullName: string;
+  role: AdminRole;
+  passwordHash: string;
+  salt: string;
+  status: 'active' | 'suspended' | 'inactive';
+  isActive?: boolean;
+  permissions: PermissionKey[];
+  lastLogin?: string;
+  createdAt: string;
 }
 
 export interface SiteCustomizerConfig {
   primaryColor: string; // e.g. '#1E40AF'
   primaryColorName: string;
   showAlertTicker: boolean;
+  tickerMode?: 'auto_pinned' | 'custom';
   alertTickerEn: string;
   alertTickerNp: string;
   heroBadgeEn: string;
@@ -185,7 +263,12 @@ export interface SecurityAuditLogEntry {
   timestamp: string;
   action: string;
   actor: string;
+  role?: string;
+  module?: string;
+  result?: 'success' | 'failed';
+  ipAddress?: string;
   status: 'success' | 'warning' | 'danger';
   severity?: 'success' | 'warning' | 'danger';
   details: string;
 }
+

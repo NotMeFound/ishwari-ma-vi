@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Language, ThemeMode, SchoolData, SiteCustomizerConfig, SecurityConfig } from '../types';
+import { Language, ThemeMode, SchoolData, SiteCustomizerConfig, SecurityConfig, Notice } from '../types';
 import {
   Sun,
   Moon,
@@ -80,6 +80,7 @@ interface HeaderProps {
   school: SchoolData;
   siteConfig?: SiteCustomizerConfig;
   securityConfig?: SecurityConfig;
+  notices?: Notice[];
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -93,6 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
   school,
   siteConfig,
   securityConfig,
+  notices = [],
 }) => {
   const [bsTime, setBsTime] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -101,8 +103,16 @@ export const Header: React.FC<HeaderProps> = ({
 
   const isNp = lang === 'np';
   const t = (en: string, np: string) => (isNp ? np : en);
-  const adminSlug = securityConfig?.adminRouteSlug || 'admin-portal';
-  const hideAdminInHeader = securityConfig?.hideAdminLinkInHeader ?? false;
+
+  // Automated Pinned Notices Ticker with Fallback
+  const pinnedNotices = notices.filter(n => n.pinned);
+  const tickerItems = pinnedNotices.length > 0
+    ? pinnedNotices.map(n => isNp ? (n.title_np || n.title_en) : (n.title_en || n.title_np))
+    : [
+        isNp
+          ? (siteConfig?.alertTickerNp || 'शैक्षिक सत्र २०८३ को वार्षिक परीक्षा तालिका (कक्षा १ देखि ९ सम्म) प्रकाशित गरिएको बारे')
+          : (siteConfig?.alertTickerEn || 'Annual Examination Routine (Grades 1 to 9) Published for Session 2083')
+      ];
 
   // Close "More" dropdown on route change or clicking outside
   useEffect(() => {
@@ -205,22 +215,39 @@ export const Header: React.FC<HeaderProps> = ({
               <span>{t('Government of Nepal • Model School', 'नेपाल सरकार • नमुना माध्यमिक विद्यालय')}</span>
             </div>
 
-            {/* Emergency Notice Ticker */}
+            {/* Latest News Automatic Continuous Ticker */}
             {(siteConfig ? siteConfig.showAlertTicker : true) && (
-              <div className="flex items-center space-x-2 overflow-hidden min-w-0">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-700 text-white tracking-wide shrink-0 shadow-xs uppercase">
-                  <Bell className="w-2.5 h-2.5 animate-pulse" />
-                  <span>{t('Latest News', 'ताजा सूचना')}</span>
+              <div className="flex items-center space-x-2.5 overflow-hidden min-w-0 flex-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[10px] font-bold bg-amber-400 text-slate-950 tracking-wider shrink-0 shadow-xs uppercase">
+                  <Bell className="w-2.5 h-2.5 animate-pulse text-slate-950 stroke-[2.2]" />
+                  <span>{t('Latest News', 'ताजा समाचार')}</span>
                 </span>
-                <button
+                <div
                   onClick={() => onRouteChange('notices')}
-                  className="text-slate-300 hover:text-white truncate text-left transition font-medium text-xs cursor-pointer"
+                  className="overflow-hidden flex-1 relative cursor-pointer"
+                  title={t('Click to view all notices', 'सबै सूचनाहरू हेर्न क्लिक गर्नुहोस्')}
                 >
-                  {t(
-                    siteConfig?.alertTickerEn || 'Annual Examination Routine (Grades 1 to 9) Published for Session 2083',
-                    siteConfig?.alertTickerNp || 'शैक्षिक सत्र २०८३ को वार्षिक परीक्षा तालिका (कक्षा १ देखि ९ सम्म) प्रकाशित गरिएको बारे'
-                  )}
-                </button>
+                  <div className="animate-ticker-continuous flex items-center gap-8 py-0.5">
+                    {/* Copy 1 */}
+                    <div className="flex items-center gap-8 shrink-0">
+                      {tickerItems.map((item, idx) => (
+                        <span key={`ticker-1-${idx}`} className="text-slate-300 hover:text-white transition font-medium text-xs flex items-center gap-2.5">
+                          <span>{item}</span>
+                          <span className="text-amber-400 font-bold">•</span>
+                        </span>
+                      ))}
+                    </div>
+                    {/* Copy 2 for seamless continuous loop */}
+                    <div className="flex items-center gap-8 shrink-0">
+                      {tickerItems.map((item, idx) => (
+                        <span key={`ticker-2-${idx}`} className="text-slate-300 hover:text-white transition font-medium text-xs flex items-center gap-2.5">
+                          <span>{item}</span>
+                          <span className="text-amber-400 font-bold">•</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -607,23 +634,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </button>
             </div>
-
-            {/* Right Nav Utility: Official Admin Portal */}
-            <div className="flex items-center space-x-2 pl-4 border-l border-blue-700/50 dark:border-slate-800">
-              {!hideAdminInHeader && (
-                <button
-                  onClick={() => onRouteChange(adminSlug)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer ${
-                    activeRoute === 'admin' || activeRoute === adminSlug
-                      ? 'bg-amber-400 text-slate-950 font-black shadow-xs'
-                      : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
-                  }`}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-300" />
-                  <span>{t('Admin Portal', 'प्रशासन')}</span>
-                </button>
-              )}
-            </div>
           </div>
         </div>
       </nav>
@@ -631,21 +641,20 @@ export const Header: React.FC<HeaderProps> = ({
       {/* 4. MOBILE DRAWER / MENU */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 space-y-3 shadow-lg">
-          {/* Emergency Notice Pill for Mobile */}
+          {/* Latest News Pill for Mobile */}
           {(siteConfig ? siteConfig.showAlertTicker : true) && (
             <div
               onClick={() => {
                 onRouteChange('notices');
                 setMobileMenuOpen(false);
               }}
-              className="p-2 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs flex items-center gap-2 text-red-700 dark:text-red-300 cursor-pointer"
+              className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-xs flex items-center gap-2 text-amber-900 dark:text-amber-300 cursor-pointer overflow-hidden"
             >
-              <Bell className="w-3.5 h-3.5 text-red-600 shrink-0 animate-pulse" />
-              <span className="truncate font-medium">
-                {t(
-                  siteConfig?.alertTickerEn || 'Annual Examination Routine (Grades 1 to 9) Published',
-                  siteConfig?.alertTickerNp || 'शैक्षिक सत्र २०८३ को वार्षिक परीक्षा तालिका'
-                )}
+              <span className="px-1.5 py-0.5 rounded-sm bg-amber-400 text-slate-950 font-bold text-[9px] uppercase tracking-wider shrink-0">
+                {t('Latest News', 'ताजा समाचार')}
+              </span>
+              <span className="truncate font-medium text-slate-800 dark:text-slate-200">
+                {tickerItems[0]}
               </span>
             </div>
           )}
@@ -715,19 +724,6 @@ export const Header: React.FC<HeaderProps> = ({
               <Sparkles className="w-4 h-4 text-emerald-200" />
               <span>{t('Online Admission 2083 Open', 'नयाँ भर्ना २०८३ खुला')}</span>
             </button>
-
-            {!hideAdminInHeader && (
-              <button
-                onClick={() => {
-                  onRouteChange(adminSlug);
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full py-2 px-3 rounded-lg bg-slate-900 dark:bg-slate-800 text-amber-300 border border-slate-700 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Lock className="w-4 h-4 text-amber-400" />
-                <span>{t('Admin Management Portal', 'प्रशासनिक पोर्टल लगइन')}</span>
-              </button>
-            )}
           </div>
         </div>
       )}

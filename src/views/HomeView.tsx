@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   X
 } from 'lucide-react';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 interface HomeViewProps {
   lang: Language;
@@ -44,6 +45,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onNavigate,
 }) => {
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
+  const [pendingDownloadNotice, setPendingDownloadNotice] = useState<Notice | null>(null);
   const [downloadSuccessMsg, setDownloadSuccessMsg] = useState<string | null>(null);
 
   const isNp = lang === 'np';
@@ -100,6 +102,24 @@ Website: Official Institutional Web Portal
         </div>
       )}
 
+      {/* Notice Download Confirmation Modal */}
+      {pendingDownloadNotice && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={() => setPendingDownloadNotice(null)}
+          onConfirm={() => executeDownloadNotice(pendingDownloadNotice)}
+          variant="download"
+          title={t('Confirm Notice Download', 'सूचना डाउनलोड पुष्टि गर्नुहोस्')}
+          description={t(
+            'Do you want to download this verified institutional notice circular to your device?',
+            'के तपाईं यो आधिकारिक विद्यालय सूचना आफ्नो उपकरणमा डाउनलोड गर्न चाहनुहुन्छ?'
+          )}
+          itemName={`${t(pendingDownloadNotice.title_en, pendingDownloadNotice.title_np)} (${pendingDownloadNotice.file_name})`}
+          confirmText={t('Download Circular', 'सूचना डाउनलोड गर्नुहोस्')}
+          cancelText={t('Cancel', 'रद्द गर्नुहोस्')}
+        />
+      )}
+
       {/* Notice Preview Modal */}
       {selectedNotice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4">
@@ -133,7 +153,11 @@ Website: Official Institutional Web Portal
             <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
               <span className="font-mono text-[11px] text-slate-400 truncate">{selectedNotice.file_name}</span>
               <button
-                onClick={() => handleDownloadNotice(selectedNotice)}
+                type="button"
+                onClick={() => {
+                  setPendingDownloadNotice(selectedNotice);
+                  setSelectedNotice(null);
+                }}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1E40AF] hover:bg-[#1D4ED8] text-white text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -301,7 +325,8 @@ Website: Official Institutional Web Portal
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => handleDownloadNotice(notice)}
+                    type="button"
+                    onClick={() => setPendingDownloadNotice(notice)}
                     className="font-bold text-slate-700 dark:text-slate-300 hover:text-[#1E40AF] dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />

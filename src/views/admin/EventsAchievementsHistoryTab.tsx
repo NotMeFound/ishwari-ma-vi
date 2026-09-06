@@ -14,6 +14,7 @@ import {
   Calendar,
   CheckCircle2
 } from 'lucide-react';
+import { ConfirmationModal, ConfirmationVariant } from '../../components/ConfirmationModal';
 
 interface EventsAchievementsHistoryTabProps {
   lang: Language;
@@ -37,6 +38,24 @@ export const EventsAchievementsHistoryTab: React.FC<EventsAchievementsHistoryTab
   onShowToast,
 }) => {
   const [subSection, setSubSection] = useState<'events' | 'achievements' | 'history'>('events');
+
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    itemName: string;
+    confirmText: string;
+    variant: ConfirmationVariant;
+    action: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    itemName: '',
+    confirmText: 'Confirm',
+    variant: 'warning',
+    action: () => {}
+  });
 
   // Event Edit / Create State
   const [isEditingEvent, setIsEditingEvent] = useState(false);
@@ -82,94 +101,178 @@ export const EventsAchievementsHistoryTab: React.FC<EventsAchievementsHistoryTab
   const handleSaveEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventForm.title_en || !eventForm.title_np) {
-      alert(t('Please enter both English and Nepali event titles.', 'कृपया नेपाली र अंग्रेजी दुवै शीर्षकहरू प्रविष्ट गर्नुहोस्।'));
+      onShowToast(t('Please enter both English and Nepali event titles.', 'कृपया नेपाली र अंग्रेजी दुवै शीर्षकहरू प्रविष्ट गर्नुहोस्।'));
       return;
     }
 
-    if (eventForm.id && eventForm.id !== 0) {
-      // Update
-      const updated = events.map(ev => ev.id === eventForm.id ? eventForm : ev);
-      onUpdateEvents(updated);
-      onShowToast(t('Event updated successfully.', 'कार्यक्रम विवरण अद्यावधिक गरियो।'));
-    } else {
-      // Create
-      const newEvent: SchoolEvent = {
-        ...eventForm,
-        id: Date.now(),
-      };
-      onUpdateEvents([newEvent, ...events]);
-      onShowToast(t('New event created.', 'नयाँ कार्यक्रम थपियो।'));
-    }
-    setIsEditingEvent(false);
+    const isUpdate = Boolean(eventForm.id && eventForm.id !== 0);
+
+    setConfirmState({
+      isOpen: true,
+      variant: isUpdate ? 'update' : 'create',
+      title: isUpdate ? t('Confirm Event Update', 'कार्यक्रम अद्यावधिक पुष्टि गर्नुहोस्') : t('Confirm New Event', 'नयाँ कार्यक्रम पुष्टि गर्नुहोस्'),
+      description: isUpdate
+        ? t('Are you sure you want to save modifications to this school event?', 'के तपाईं यस कार्यक्रमका विवरणहरू अद्यावधिक गर्न चाहनुहुन्छ?')
+        : t('Are you sure you want to publish this new event to the institutional calendar?', 'के तपाईं यो नयाँ कार्यक्रम पात्रोमा थप्न चाहनुहुन्छ?'),
+      itemName: `${eventForm.title_en} (${eventForm.title_np})`,
+      confirmText: isUpdate ? t('Save Event', 'कार्यक्रम सुरक्षित गर्नुहोस्') : t('Create Event', 'कार्यक्रम सिर्जना गर्नुहोस्'),
+      action: () => {
+        if (isUpdate) {
+          const updated = events.map(ev => ev.id === eventForm.id ? eventForm : ev);
+          onUpdateEvents(updated);
+          onShowToast(t('Event updated successfully.', 'कार्यक्रम विवरण अद्यावधिक गरियो।'));
+        } else {
+          const newEvent: SchoolEvent = {
+            ...eventForm,
+            id: Date.now(),
+          };
+          onUpdateEvents([newEvent, ...events]);
+          onShowToast(t('New event created.', 'नयाँ कार्यक्रम थपियो।'));
+        }
+        setIsEditingEvent(false);
+      }
+    });
   };
 
   const handleDeleteEvent = (id: number) => {
-    if (window.confirm(t('Are you sure you want to delete this event?', 'के तपाईं यो कार्यक्रम मेटाउन निश्चित हुनुहुन्छ?'))) {
-      onUpdateEvents(events.filter(e => e.id !== id));
-      onShowToast(t('Event deleted.', 'कार्यक्रम मेटाइयो।'));
-    }
+    const target = events.find(e => e.id !== id ? false : true);
+    const itemName = target ? `${target.title_en} (${target.title_np})` : `Event #${id}`;
+
+    setConfirmState({
+      isOpen: true,
+      variant: 'delete',
+      title: t('Confirm Event Deletion', 'कार्यक्रम मेटाउन पुष्टि गर्नुहोस्'),
+      description: t('Are you sure you want to permanently delete this event? This action cannot be undone.', 'के तपाईं यो कार्यक्रम सदाका लागि मेटाउन निश्चित हुनुहुन्छ?'),
+      itemName,
+      confirmText: t('Delete Event', 'कार्यक्रम मेटाउनुहोस्'),
+      action: () => {
+        onUpdateEvents(events.filter(e => e.id !== id));
+        onShowToast(t('Event deleted.', 'कार्यक्रम मेटाइयो।'));
+      }
+    });
   };
 
   // === ACHIEVEMENT HANDLERS ===
   const handleSaveAchievement = (e: React.FormEvent) => {
     e.preventDefault();
     if (!achievementForm.title_en || !achievementForm.title_np) {
-      alert(t('Please enter achievement title.', 'कृपया उपलब्धिको शीर्षक प्रविष्ट गर्नुहोस्।'));
+      onShowToast(t('Please enter achievement title.', 'कृपया उपलब्धिको शीर्षक प्रविष्ट गर्नुहोस्।'));
       return;
     }
 
-    if (achievementForm.id && achievementForm.id !== 0) {
-      const updated = achievements.map(a => a.id === achievementForm.id ? achievementForm : a);
-      onUpdateAchievements(updated);
-      onShowToast(t('Achievement updated.', 'उपलब्धि अद्यावधिक गरियो।'));
-    } else {
-      const newAch: Achievement = {
-        ...achievementForm,
-        id: Date.now(),
-      };
-      onUpdateAchievements([newAch, ...achievements]);
-      onShowToast(t('New student achievement added.', 'नयाँ उपलब्धि थपियो।'));
-    }
-    setIsEditingAchievement(false);
+    const isUpdate = Boolean(achievementForm.id && achievementForm.id !== 0);
+
+    setConfirmState({
+      isOpen: true,
+      variant: isUpdate ? 'update' : 'create',
+      title: isUpdate ? t('Confirm Achievement Update', 'उपलब्धि अद्यावधिक पुष्टि गर्नुहोस्') : t('Confirm New Achievement', 'नयाँ उपलब्धि पुष्टि गर्नुहोस्'),
+      description: isUpdate
+        ? t('Are you sure you want to save modifications to this achievement award?', 'के तपाईं यो उपलब्धि विवरण सुरक्षित गर्न निश्चित हुनुहुन्छ?')
+        : t('Are you sure you want to add this student achievement to the public recognition board?', 'के तपाईं यो नयाँ उपलब्धि सम्मान सूचीमा थप्न चाहनुहुन्छ?'),
+      itemName: `${achievementForm.title_en} (${achievementForm.title_np})`,
+      confirmText: isUpdate ? t('Save Achievement', 'उपलब्धि सुरक्षित गर्नुहोस्') : t('Add Achievement', 'उपलब्धि थप्नुहोस्'),
+      action: () => {
+        if (isUpdate) {
+          const updated = achievements.map(a => a.id === achievementForm.id ? achievementForm : a);
+          onUpdateAchievements(updated);
+          onShowToast(t('Achievement updated.', 'उपलब्धि अद्यावधिक गरियो।'));
+        } else {
+          const newAch: Achievement = {
+            ...achievementForm,
+            id: Date.now(),
+          };
+          onUpdateAchievements([newAch, ...achievements]);
+          onShowToast(t('New student achievement added.', 'नयाँ उपलब्धि थपियो।'));
+        }
+        setIsEditingAchievement(false);
+      }
+    });
   };
 
   const handleDeleteAchievement = (id: number) => {
-    if (window.confirm(t('Are you sure you want to delete this achievement?', 'के तपाईं यो उपलब्धि मेटाउन निश्चित हुनुहुन्छ?'))) {
-      onUpdateAchievements(achievements.filter(a => a.id !== id));
-      onShowToast(t('Achievement deleted.', 'उपलब्धि मेटाइयो।'));
-    }
+    const target = achievements.find(a => a.id === id);
+    const itemName = target ? `${target.title_en} (${target.title_np})` : `Achievement #${id}`;
+
+    setConfirmState({
+      isOpen: true,
+      variant: 'delete',
+      title: t('Confirm Achievement Deletion', 'उपलब्धि मेटाउन पुष्टि गर्नुहोस्'),
+      description: t('Are you sure you want to permanently delete this student achievement?', 'के तपाईं यो उपलब्धि विवरण मेटाउन निश्चित हुनुहुन्छ?'),
+      itemName,
+      confirmText: t('Delete Achievement', 'उपलब्धि मेटाउनुहोस्'),
+      action: () => {
+        onUpdateAchievements(achievements.filter(a => a.id !== id));
+        onShowToast(t('Achievement deleted.', 'उपलब्धि मेटाइयो।'));
+      }
+    });
   };
 
   // === HISTORY HANDLERS ===
   const handleSaveHistory = (e: React.FormEvent) => {
     e.preventDefault();
     if (!historyForm.title_en || !historyForm.title_np) {
-      alert(t('Please enter title.', 'कृपया शीर्षक प्रविष्ट गर्नुहोस्।'));
+      onShowToast(t('Please enter title.', 'कृपया शीर्षक प्रविष्ट गर्नुहोस्।'));
       return;
     }
 
-    if (editingHistoryIndex !== null) {
-      const updated = [...history];
-      updated[editingHistoryIndex] = historyForm;
-      onUpdateHistory(updated);
-      onShowToast(t('Historical milestone updated.', 'ऐतिहासिक स्तम्भ अद्यावधिक गरियो।'));
-    } else {
-      onUpdateHistory([historyForm, ...history]);
-      onShowToast(t('New historical milestone added.', 'नयाँ ऐतिहासिक कोसेढुङ्गा थपियो।'));
-    }
-    setIsEditingHistory(false);
-    setEditingHistoryIndex(null);
+    const isUpdate = editingHistoryIndex !== null;
+
+    setConfirmState({
+      isOpen: true,
+      variant: isUpdate ? 'update' : 'create',
+      title: isUpdate ? t('Confirm Milestone Update', 'इतिहास स्तम्भ अद्यावधिक पुष्टि गर्नुहोस्') : t('Confirm New Milestone', 'नयाँ इतिहास स्तम्भ पुष्टि गर्नुहोस्'),
+      description: isUpdate
+        ? t('Are you sure you want to save modifications to this historical milestone?', 'के तपाईं यो ऐतिहासिक कोसेढुङ्गा सम्पादन गर्न चाहनुहुन्छ?')
+        : t('Are you sure you want to add this milestone to the school chronology?', 'के तपाईं यो ऐतिहासिक कोसेढुङ्गा विद्यालय इतिहासमा थप्न चाहनुहुन्छ?'),
+      itemName: `${historyForm.year}: ${historyForm.title_en}`,
+      confirmText: isUpdate ? t('Save Milestone', 'इतिहास सुरक्षित गर्नुहोस्') : t('Add Milestone', 'इतिहास थप्नुहोस्'),
+      action: () => {
+        if (editingHistoryIndex !== null) {
+          const updated = [...history];
+          updated[editingHistoryIndex] = historyForm;
+          onUpdateHistory(updated);
+          onShowToast(t('Historical milestone updated.', 'ऐतिहासिक स्तम्भ अद्यावधिक गरियो।'));
+        } else {
+          onUpdateHistory([historyForm, ...history]);
+          onShowToast(t('New historical milestone added.', 'नयाँ ऐतिहासिक कोसेढुङ्गा थपियो।'));
+        }
+        setIsEditingHistory(false);
+        setEditingHistoryIndex(null);
+      }
+    });
   };
 
   const handleDeleteHistory = (idx: number) => {
-    if (window.confirm(t('Are you sure you want to delete this milestone?', 'के तपाईं यो इतिहास मेटाउन चाहनुहुन्छ?'))) {
-      onUpdateHistory(history.filter((_, i) => i !== idx));
-      onShowToast(t('Milestone removed.', 'इतिहास मेटाइयो।'));
-    }
+    const target = history[idx];
+    const itemName = target ? `${target.year}: ${target.title_en}` : `Milestone #${idx}`;
+
+    setConfirmState({
+      isOpen: true,
+      variant: 'delete',
+      title: t('Confirm Milestone Deletion', 'इतिहास स्तम्भ मेटाउन पुष्टि गर्नुहोस्'),
+      description: t('Are you sure you want to permanently delete this milestone from school history?', 'के तपाईं यो ऐतिहासिक विवरण मेटाउन निश्चित हुनुहुन्छ?'),
+      itemName,
+      confirmText: t('Delete Milestone', 'इतिहास मेटाउनुहोस्'),
+      action: () => {
+        onUpdateHistory(history.filter((_, i) => i !== idx));
+        onShowToast(t('Milestone removed.', 'इतिहास मेटाइयो।'));
+      }
+    });
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      <ConfirmationModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.action}
+        variant={confirmState.variant}
+        title={confirmState.title}
+        description={confirmState.description}
+        itemName={confirmState.itemName}
+        confirmText={confirmState.confirmText}
+        cancelText={t('Cancel', 'रद्द गर्नुहोस्')}
+      />
       {/* Sub-navigation tabs */}
       <div className="flex items-center gap-2 p-1 rounded-xl bg-slate-200 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 w-fit">
         <button

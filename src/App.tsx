@@ -21,8 +21,10 @@ import {
   GalleryItem,
   SiteCustomizerConfig,
   SecurityConfig,
-  SecurityAuditLogEntry
+  SecurityAuditLogEntry,
+  AdminAccount
 } from './types';
+import { loadAdminAccounts, saveAdminAccounts } from './utils/security';
 import {
   initialSchoolData,
   initialNotices,
@@ -157,6 +159,10 @@ export default function App() {
     return saved ? JSON.parse(saved) : initialAuditLogs;
   });
 
+  const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>(() => {
+    return loadAdminAccounts();
+  });
+
   // Listen to hashchange for direct linking (e.g., #admin, #notices, #admin-portal)
   useEffect(() => {
     const handleHashChange = () => {
@@ -238,6 +244,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('ishwari_audit_logs', JSON.stringify(auditLogs));
   }, [auditLogs]);
+
+  useEffect(() => {
+    saveAdminAccounts(adminAccounts);
+  }, [adminAccounts]);
 
   // Global Ctrl+K hotkey for search
   useEffect(() => {
@@ -332,10 +342,59 @@ export default function App() {
   };
 
   const adminSlug = securityConfig?.adminRouteSlug || 'admin-portal';
+  const isAdminRoute = activeRoute === 'admin' || activeRoute === adminSlug;
+
+  // When on Admin Route, isolate the view completely (no public header, footer, or search modal)
+  if (isAdminRoute) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-[#1E40AF] selection:text-white">
+        <AdminView
+          lang={lang}
+          theme={theme}
+          onToggleLang={handleToggleLang}
+          onToggleTheme={handleToggleTheme}
+          school={school}
+          onUpdateSchool={setSchool}
+          notices={notices}
+          onUpdateNotices={setNotices}
+          staff={staff}
+          onUpdateStaff={setStaff}
+          facilities={facilities}
+          onUpdateFacilities={setFacilities}
+          programs={programs}
+          onUpdatePrograms={setPrograms}
+          documents={documents}
+          onUpdateDocuments={setDocuments}
+          messages={messages}
+          onUpdateMessages={setMessages}
+          events={events}
+          onUpdateEvents={setEvents}
+          achievements={achievements}
+          onUpdateAchievements={setAchievements}
+          history={history}
+          onUpdateHistory={setHistory}
+          gallery={gallery}
+          onUpdateGallery={setGallery}
+          siteConfig={siteConfig}
+          onUpdateSiteConfig={setSiteConfig}
+          securityConfig={securityConfig}
+          onUpdateSecurityConfig={setSecurityConfig}
+          auditLogs={auditLogs}
+          onClearAuditLogs={handleClearAuditLogs}
+          onAddAuditLog={handleAddAuditLog}
+          adminAccounts={adminAccounts}
+          onUpdateAdminAccounts={setAdminAccounts}
+          onRestoreAllData={handleRestoreAllData}
+          onResetData={handleResetData}
+          onNavigateHome={() => handleRouteChange('home')}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-[#1E40AF] selection:text-white">
-      {/* Universal Header with Lang & Dark Mode Toggles + Admin Link */}
+      {/* Universal Header with Lang & Dark Mode Toggles */}
       <Header
         lang={lang}
         onToggleLang={handleToggleLang}
@@ -347,6 +406,7 @@ export default function App() {
         school={school}
         siteConfig={siteConfig}
         securityConfig={securityConfig}
+        notices={notices}
       />
 
       {/* Main Content View Switcher with Smooth Route Transitions */}
@@ -394,43 +454,6 @@ export default function App() {
             {activeRoute === 'community' && <CommunityView lang={lang} />}
             {activeRoute === 'contact' && (
               <ContactView lang={lang} school={school} onSendMessage={handleAddMessage} />
-            )}
-            {(activeRoute === 'admin' || activeRoute === adminSlug) && (
-              <AdminView
-                lang={lang}
-                school={school}
-                onUpdateSchool={setSchool}
-                notices={notices}
-                onUpdateNotices={setNotices}
-                staff={staff}
-                onUpdateStaff={setStaff}
-                facilities={facilities}
-                onUpdateFacilities={setFacilities}
-                programs={programs}
-                onUpdatePrograms={setPrograms}
-                documents={documents}
-                onUpdateDocuments={setDocuments}
-                messages={messages}
-                onUpdateMessages={setMessages}
-                events={events}
-                onUpdateEvents={setEvents}
-                achievements={achievements}
-                onUpdateAchievements={setAchievements}
-                history={history}
-                onUpdateHistory={setHistory}
-                gallery={gallery}
-                onUpdateGallery={setGallery}
-                siteConfig={siteConfig}
-                onUpdateSiteConfig={setSiteConfig}
-                securityConfig={securityConfig}
-                onUpdateSecurityConfig={setSecurityConfig}
-                auditLogs={auditLogs}
-                onClearAuditLogs={handleClearAuditLogs}
-                onAddAuditLog={handleAddAuditLog}
-                onRestoreAllData={handleRestoreAllData}
-                onResetData={handleResetData}
-                onNavigateHome={() => handleRouteChange('home')}
-              />
             )}
           </motion.div>
         </AnimatePresence>
