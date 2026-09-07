@@ -16,12 +16,12 @@ import {
 } from '../types';
 
 export const initialSchoolData: SchoolData = {
-  name_en: "Ishwari Secondary School",
-  name_np: "ईश्वरी माध्यमिक विद्यालय",
+  name_en: "Shree Ishwari Secondary School",
+  name_np: "श्री ईश्वरी माध्यमिक विद्यालय",
   tagline_en: "Center for Academic Excellence & Character Building",
   tagline_np: "शैक्षिक उत्कृष्टता र चरित्र निर्माणको अग्रणी केन्द्र",
-  affiliation_en: "Government of Nepal Model Secondary School",
-  affiliation_np: "नेपाल सरकार नमुना माध्यमिक विद्यालय",
+  affiliation_en: "Government of Nepal Secondary School",
+  affiliation_np: "नेपाल सरकार माध्यमिक विद्यालय",
   code: "EMIS: 48012004",
   estd_bs: "2026 B.S.",
   estd_ad: "1978 A.D.",
