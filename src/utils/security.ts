@@ -226,6 +226,3 @@ export function forceClearSessionLock(): void {
 export function saveAdminAccounts(accounts: AdminAccount[]): void {
   safeStorage.setJSON('ishwari_admin_accounts', accounts);
 }
-
-
-
