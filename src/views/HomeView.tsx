@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Building2,
   BookOpen,
-  Sparkles,
+  Quote,
   ArrowRight,
   Microscope,
   Monitor,
@@ -92,6 +92,11 @@ Website: Official Institutional Web Portal
     setTimeout(() => setDownloadSuccessMsg(null), 3500);
   };
 
+  const executeDownloadNotice = (notice: Notice) => {
+    handleDownloadNotice(notice);
+    setPendingDownloadNotice(null);
+  };
+
   return (
     <div className="space-y-16 pb-16">
       {/* Toast Feedback Notification */}
@@ -111,19 +116,25 @@ Website: Official Institutional Web Portal
           variant="download"
           title={t('Confirm Notice Download', 'सूचना डाउनलोड पुष्टि गर्नुहोस्')}
           description={t(
-            'Do you want to download this verified institutional notice circular to your device?',
-            'के तपाईं यो आधिकारिक विद्यालय सूचना आफ्नो उपकरणमा डाउनलोड गर्न चाहनुहुन्छ?'
+            'Do you want to download this notice?',
+            'के तपाईं यो सूचना डाउनलोड गर्न चाहनुहुन्छ?'
           )}
           itemName={`${t(pendingDownloadNotice.title_en, pendingDownloadNotice.title_np)} (${pendingDownloadNotice.file_name})`}
-          confirmText={t('Download Circular', 'सूचना डाउनलोड गर्नुहोस्')}
+          confirmText={t('Download', 'डाउनलोड')}
           cancelText={t('Cancel', 'रद्द गर्नुहोस्')}
         />
       )}
 
       {/* Notice Preview Modal */}
       {selectedNotice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+          onClick={() => setSelectedNotice(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#1E40AF] text-white uppercase">
@@ -133,35 +144,41 @@ Website: Official Institutional Web Portal
                   {t(selectedNotice.date_en, selectedNotice.date_np)}
                 </span>
               </div>
-              <button
-                onClick={() => setSelectedNotice(null)}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
                 {t(selectedNotice.title_en, selectedNotice.title_np)}
               </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed max-h-[50vh] overflow-y-auto whitespace-pre-line">
                 {t(selectedNotice.description_en, selectedNotice.description_np)}
               </p>
             </div>
 
-            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
-              <span className="font-mono text-[11px] text-slate-400 truncate">{selectedNotice.file_name}</span>
+            {/* Bottom Controls: Bottom-left: subtle/dim red close icon; Bottom-right: vivid purple download icon */}
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setSelectedNotice(null)}
+                title={t('Close Notice', 'सूचना बन्द गर्नुहोस्')}
+                aria-label={t('Close Notice', 'सूचना बन्द गर्नुहोस्')}
+                className="p-2 rounded-lg text-red-500/70 hover:text-red-600 dark:text-red-400/70 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+              >
+                <X className="w-5 h-5 stroke-[1.8]" />
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
-                  setPendingDownloadNotice(selectedNotice);
+                  const toDownload = selectedNotice;
                   setSelectedNotice(null);
+                  setPendingDownloadNotice(toDownload);
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1E40AF] hover:bg-[#1D4ED8] text-white text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+                title={t('Download Notice', 'सूचना डाउनलोड गर्नुहोस्')}
+                aria-label={t('Download Notice', 'सूचना डाउनलोड गर्नुहोस्')}
+                className="p-2 rounded-lg text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>{t('Download Circular', 'सूचना डाउनलोड')}</span>
+                <Download className="w-5 h-5 stroke-[1.8]" />
               </button>
             </div>
           </div>
@@ -175,9 +192,16 @@ Website: Official Institutional Web Portal
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30 pointer-events-none" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#1E40AF]/25 text-blue-300 border border-[#1E40AF]/40 shadow-xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-              <span>{t(config.heroBadgeEn || initialSiteConfig.heroBadgeEn, config.heroBadgeNp || initialSiteConfig.heroBadgeNp)}</span>
+            <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 shadow-xs">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/9/9b/Flag_of_Nepal.gif"
+                alt="National Flag of Nepal"
+                className="h-6 w-auto object-contain shrink-0 drop-shadow-xs"
+                loading="lazy"
+              />
+              <span className="text-xs font-semibold text-slate-200 tracking-wide font-mono">
+                {t(`Estd. ${school.estd_bs} B.S. (${school.estd_ad} A.D.)`, `स्थापना: वि.सं. ${school.estd_bs}`)}
+              </span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white max-w-3xl leading-tight">
@@ -244,7 +268,7 @@ Website: Official Institutional Web Portal
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
         <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#1E40AF] dark:text-blue-400" />
+            <GraduationCap className="w-4 h-4 text-[#1E40AF] dark:text-blue-400" />
             <span>{t('Direct Student & Parent Services', 'विद्यार्थी तथा अभिभावक सेवाहरू')}</span>
           </h2>
         </div>
@@ -299,7 +323,16 @@ Website: Official Institutional Web Portal
             {pinnedNotices.map((notice) => (
               <div
                 key={notice.id}
-                className="p-6 rounded-xl border border-[#1E40AF]/25 bg-blue-50/40 dark:bg-slate-900/90 space-y-3 relative shadow-2xs hover:border-[#1E40AF]/60 transition-all duration-200"
+                onClick={() => setSelectedNotice(notice)}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedNotice(notice);
+                  }
+                }}
+                className="p-6 rounded-xl border border-[#1E40AF]/25 bg-blue-50/40 dark:bg-slate-900/90 space-y-3 relative shadow-2xs hover:border-[#1E40AF]/60 transition-all duration-200 cursor-pointer group select-none"
               >
                 <div className="flex items-center justify-between text-xs">
                   <span className="px-2 py-0.5 rounded bg-[#1E40AF] text-white font-bold uppercase tracking-wider text-[10px]">
@@ -310,28 +343,20 @@ Website: Official Institutional Web Portal
                     <span>{t(notice.date_en, notice.date_np)}</span>
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-[#1E40AF] dark:group-hover:text-blue-400 transition-colors">
                   {t(notice.title_en, notice.title_np)}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
                   {t(notice.description_en, notice.description_np)}
                 </p>
                 <div className="pt-2 flex items-center justify-between text-xs border-t border-slate-200 dark:border-slate-800">
-                  <button
-                    onClick={() => setSelectedNotice(notice)}
-                    className="font-bold text-[#1E40AF] dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>{t('View Details', 'विस्तृत विवरण')}</span>
+                  <span className="font-bold text-[#1E40AF] dark:text-blue-400 flex items-center gap-1">
+                    <span>{t('View Circular', 'सूचना हेर्नुहोस्')}</span>
                     <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPendingDownloadNotice(notice)}
-                    className="font-bold text-slate-700 dark:text-slate-300 hover:text-[#1E40AF] dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>{t('Download', 'डाउनलोड')}</span>
-                  </button>
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                    {notice.file_size_kb ? `${notice.file_size_kb} KB • PDF` : 'PDF'}
+                  </span>
                 </div>
               </div>
             ))}
@@ -362,7 +387,7 @@ Website: Official Institutional Web Portal
 
             <div className="lg:col-span-8 space-y-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1E40AF] dark:text-blue-400">
-                <Sparkles className="w-3.5 h-3.5" />
+                <Quote className="w-3.5 h-3.5" />
                 <span>{t("Principal's Institutional Address", 'प्रधानाध्यापकको सन्देश')}</span>
               </div>
               <p className="italic text-base sm:text-lg text-slate-900 dark:text-slate-100 font-serif leading-relaxed">

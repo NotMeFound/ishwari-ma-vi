@@ -1,4 +1,5 @@
 import { AdminAccount, PermissionKey } from '../types';
+import { safeStorage, safeSessionStorage } from './storage';
 
 // SHA-256 password hashing with salt using standard Web Crypto API
 export async function hashPasswordWithSalt(password: string, salt: string): Promise<string> {
@@ -121,15 +122,11 @@ export async function verifyPassword(inputPassword: string, storedHashOrPlain: s
 
 // Storage helpers
 export function loadAdminAccounts(): AdminAccount[] {
-  if (typeof window === 'undefined') return initialAdminAccounts;
-  const stored = localStorage.getItem('ishwari_admin_accounts');
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    } catch (e) {
-      console.error('Failed to parse admin accounts from storage', e);
-    }
+  try {
+    const parsed = safeStorage.getJSON<AdminAccount[]>('ishwari_admin_accounts', initialAdminAccounts);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+  } catch (e) {
+    console.error('Failed to parse admin accounts from storage', e);
   }
   return initialAdminAccounts;
 }
@@ -149,18 +146,17 @@ const SESSION_LOCK_KEY = 'ishwari_active_session_lock';
 const SESSION_HEARTBEAT_TIMEOUT_MS = 15 * 60 * 1000; // 15 mins timeout if inactive
 
 export function getActiveSessionLock(): ActiveSessionLock | null {
-  if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem(SESSION_LOCK_KEY);
+    const raw = safeStorage.getItem(SESSION_LOCK_KEY);
     if (!raw) return null;
     const session: ActiveSessionLock = JSON.parse(raw);
     if (Date.now() - session.lastHeartbeat > SESSION_HEARTBEAT_TIMEOUT_MS) {
-      localStorage.removeItem(SESSION_LOCK_KEY);
+      safeStorage.removeItem(SESSION_LOCK_KEY);
       return null;
     }
     return session;
   } catch (e) {
-    localStorage.removeItem(SESSION_LOCK_KEY);
+    safeStorage.removeItem(SESSION_LOCK_KEY);
     return null;
   }
 }
@@ -170,9 +166,8 @@ export function acquireSessionLock(account: AdminAccount): {
   activeSession?: ActiveSessionLock;
   sessionId?: string;
 } {
-  if (typeof window === 'undefined') return { success: true, sessionId: 'default_sess' };
   const current = getActiveSessionLock();
-  const mySessionId = sessionStorage.getItem('ishwari_my_session_id');
+  const mySessionId = safeSessionStorage.getItem('ishwari_my_session_id');
 
   // If there's an active session belonging to someone else or another tab
   if (current && (!mySessionId || current.sessionId !== mySessionId)) {
@@ -198,42 +193,39 @@ export function acquireSessionLock(account: AdminAccount): {
     lastHeartbeat: Date.now()
   };
 
-  localStorage.setItem(SESSION_LOCK_KEY, JSON.stringify(newLock));
-  sessionStorage.setItem('ishwari_my_session_id', newSessionId);
+  safeStorage.setItem(SESSION_LOCK_KEY, JSON.stringify(newLock));
+  safeSessionStorage.setItem('ishwari_my_session_id', newSessionId);
   return { success: true, sessionId: newSessionId };
 }
 
 export function refreshSessionHeartbeat(): boolean {
-  if (typeof window === 'undefined') return false;
-  const mySessionId = sessionStorage.getItem('ishwari_my_session_id');
+  const mySessionId = safeSessionStorage.getItem('ishwari_my_session_id');
   const current = getActiveSessionLock();
   if (current && mySessionId && current.sessionId === mySessionId) {
     current.lastHeartbeat = Date.now();
-    localStorage.setItem(SESSION_LOCK_KEY, JSON.stringify(current));
+    safeStorage.setItem(SESSION_LOCK_KEY, JSON.stringify(current));
     return true;
   }
   return false;
 }
 
 export function releaseSessionLock(): void {
-  if (typeof window === 'undefined') return;
-  const mySessionId = sessionStorage.getItem('ishwari_my_session_id');
+  const mySessionId = safeSessionStorage.getItem('ishwari_my_session_id');
   const current = getActiveSessionLock();
   if (!current || !mySessionId || current.sessionId === mySessionId) {
-    localStorage.removeItem(SESSION_LOCK_KEY);
+    safeStorage.removeItem(SESSION_LOCK_KEY);
   }
-  sessionStorage.removeItem('ishwari_my_session_id');
+  safeSessionStorage.removeItem('ishwari_my_session_id');
 }
 
 export function forceClearSessionLock(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(SESSION_LOCK_KEY);
-  sessionStorage.removeItem('ishwari_my_session_id');
+  safeStorage.removeItem(SESSION_LOCK_KEY);
+  safeSessionStorage.removeItem('ishwari_my_session_id');
 }
 
 export function saveAdminAccounts(accounts: AdminAccount[]): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('ishwari_admin_accounts', JSON.stringify(accounts));
+  safeStorage.setJSON('ishwari_admin_accounts', accounts);
 }
+
 
 

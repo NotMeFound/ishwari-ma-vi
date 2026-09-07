@@ -19,6 +19,7 @@ export interface SchoolData {
   principal_name_np: string;
   principal_message_en: string;
   principal_message_np: string;
+  logo_url?: string;
 }
 
 export interface Notice {

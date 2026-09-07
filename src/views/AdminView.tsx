@@ -29,6 +29,7 @@ import {
   refreshSessionHeartbeat,
   forceClearSessionLock
 } from '../utils/security';
+import { safeSessionStorage } from '../utils/storage';
 import {
   Lock,
   Unlock,
@@ -52,7 +53,8 @@ import {
   EyeOff,
   AlertCircle,
   Pin,
-  Sparkles,
+  SlidersHorizontal,
+  Quote,
   Layout,
   ShieldAlert,
   CalendarDays,
@@ -162,20 +164,20 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const effectiveAccounts = adminAccounts && adminAccounts.length > 0 ? adminAccounts : initialAdminAccounts;
 
   const [currentAccount, setCurrentAccount] = useState<AdminAccount | null>(() => {
-    const saved = sessionStorage.getItem('ishwari_current_account');
+    const saved = safeSessionStorage.getItem('ishwari_current_account');
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch (e) {}
     }
-    if (sessionStorage.getItem('ishwari_admin_auth') === 'true') {
+    if (safeSessionStorage.getItem('ishwari_admin_auth') === 'true') {
       return (adminAccounts && adminAccounts.length > 0 ? adminAccounts : initialAdminAccounts)[0];
     }
     return null;
   });
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem('ishwari_admin_auth') === 'true';
+    return safeSessionStorage.getItem('ishwari_admin_auth') === 'true';
   });
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -207,15 +209,16 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
   // Security Lockout & Failed Attempts State
   const [failedAttempts, setFailedAttempts] = useState<number>(() => {
-    return Number(sessionStorage.getItem('ishwari_failed_attempts') || '0');
+    return Number(safeSessionStorage.getItem('ishwari_failed_attempts') || '0');
   });
   const [lockoutUntil, setLockoutUntil] = useState<number>(() => {
-    return Number(sessionStorage.getItem('ishwari_lockout_until') || '0');
+    return Number(safeSessionStorage.getItem('ishwari_lockout_until') || '0');
   });
   const [now, setNow] = useState<number>(Date.now());
 
-  // Emergency PIN Modal
+  // Emergency PIN Modal (strictly requires Username + Master Key)
   const [showEmergencyPinModal, setShowEmergencyPinModal] = useState(false);
+  const [emergencyUserInput, setEmergencyUserInput] = useState('');
   const [emergencyPinInput, setEmergencyPinInput] = useState('');
   const [emergencyPinError, setEmergencyPinError] = useState('');
 
@@ -235,9 +238,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
         if (!e.newValue && isAuthenticated) {
           setIsAuthenticated(false);
           setCurrentAccount(null);
-          sessionStorage.removeItem('ishwari_admin_auth');
-          sessionStorage.removeItem('ishwari_current_account');
-          sessionStorage.removeItem('ishwari_my_session_id');
+          safeSessionStorage.removeItem('ishwari_admin_auth');
+          safeSessionStorage.removeItem('ishwari_current_account');
+          safeSessionStorage.removeItem('ishwari_my_session_id');
           setAuthError(
             lang === 'np'
               ? 'प्रशासनिक सत्र लगआउट गरिएको छ।'
@@ -266,7 +269,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
           if (prev <= 1) {
             // Auto logout
             setIsAuthenticated(false);
-            sessionStorage.removeItem('ishwari_admin_auth');
+            safeSessionStorage.removeItem('ishwari_admin_auth');
             setAuthError(
               lang === 'np'
                 ? 'निष्क्रियताका कारण सुरक्षा सत्र समाप्त भयो। कृपया पुनः लगइन गर्नुहोस्।'
@@ -414,10 +417,39 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
     let authenticatedAccount: AdminAccount | null = null;
 
-    // Direct Master PIN verification: authenticates as super admin
+    // Direct Master PIN verification: requires username and authenticates directly into matching admin/superadmin account
     if (trimmedPass === recoveryPin) {
-      const superAdminAcc = effectiveAccounts.find((a) => a.role === 'super_admin') || effectiveAccounts[0];
-      authenticatedAccount = superAdminAcc;
+      if (!trimmedUser) {
+        setAuthError(
+          t(
+            'Username is required when logging in with the Master Key.',
+            'मास्टर की प्रयोग गर्दा कृपया आफ्नो प्रयोगकर्ता नाम (Username) प्रविष्ट गर्नुहोस्।'
+          )
+        );
+        return;
+      }
+      const matchingAccount = effectiveAccounts.find(
+        (a) => a.username.toLowerCase() === trimmedUser || a.email.toLowerCase() === trimmedUser
+      );
+      if (!matchingAccount) {
+        setAuthError(
+          t(
+            'Invalid username for Master Key authentication.',
+            'मास्टर की प्रमाणीकरणका लागि अवैध प्रयोगकर्ता नाम।'
+          )
+        );
+        return;
+      }
+      if (matchingAccount.status !== 'active') {
+        setAuthError(
+          t(
+            'This administrator account has been suspended by the Super Admin.',
+            'यो प्रशासक खाता सुपर प्रशासकद्वारा निलम्बन गरिएको छ।'
+          )
+        );
+        return;
+      }
+      authenticatedAccount = matchingAccount;
     } else {
       const account = effectiveAccounts.find(
         (a) => a.username.toLowerCase() === trimmedUser || a.email.toLowerCase() === trimmedUser
@@ -481,13 +513,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
       setIsAuthenticated(true);
       setCurrentAccount(authenticatedAccount);
-      sessionStorage.setItem('ishwari_admin_auth', 'true');
-      sessionStorage.setItem('ishwari_current_account', JSON.stringify(authenticatedAccount));
+      safeSessionStorage.setItem('ishwari_admin_auth', 'true');
+      safeSessionStorage.setItem('ishwari_current_account', JSON.stringify(authenticatedAccount));
       setAuthError('');
       setFailedAttempts(0);
       setLockoutUntil(0);
-      sessionStorage.removeItem('ishwari_failed_attempts');
-      sessionStorage.removeItem('ishwari_lockout_until');
+      safeSessionStorage.removeItem('ishwari_failed_attempts');
+      safeSessionStorage.removeItem('ishwari_lockout_until');
       setSessionTimeLeft((securityConfig?.sessionTimeoutMinutes || 30) * 60);
 
       // Update lastLogin on account
@@ -529,13 +561,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
     } else {
       const nextFailures = failedAttempts + 1;
       setFailedAttempts(nextFailures);
-      sessionStorage.setItem('ishwari_failed_attempts', String(nextFailures));
+      safeSessionStorage.setItem('ishwari_failed_attempts', String(nextFailures));
 
       const threshold = securityConfig?.lockoutThreshold || 5;
       if (nextFailures >= threshold) {
         const lockoutTime = Date.now() + (securityConfig?.lockoutDurationMinutes || 5) * 60 * 1000;
         setLockoutUntil(lockoutTime);
-        sessionStorage.setItem('ishwari_lockout_until', String(lockoutTime));
+        safeSessionStorage.setItem('ishwari_lockout_until', String(lockoutTime));
 
         onAddAuditLog({
           action: 'SECURITY_LOCKOUT_ENFORCED',
@@ -576,46 +608,74 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
   const handleEmergencyPinUnlock = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedUser = emergencyUserInput.trim().toLowerCase();
     const correctPin = (securityConfig?.recoveryPin || '782035').trim();
-    if (emergencyPinInput.trim() === correctPin) {
-      const superAdminAcc = effectiveAccounts.find(a => a.role === 'super_admin') || effectiveAccounts[0];
-      forceClearSessionLock();
-      acquireSessionLock(superAdminAcc);
-      setIsAuthenticated(true);
-      setCurrentAccount(superAdminAcc);
-      sessionStorage.setItem('ishwari_admin_auth', 'true');
-      sessionStorage.setItem('ishwari_current_account', JSON.stringify(superAdminAcc));
-      setFailedAttempts(0);
-      setLockoutUntil(0);
-      sessionStorage.removeItem('ishwari_failed_attempts');
-      sessionStorage.removeItem('ishwari_lockout_until');
-      setShowEmergencyPinModal(false);
-      setEmergencyPinInput('');
-      setEmergencyPinError('');
-      setAuthError('');
-      setSessionTimeLeft((securityConfig?.sessionTimeoutMinutes || 30) * 60);
 
-      onAddAuditLog({
-        action: 'EMERGENCY_PIN_BYPASS',
-        actor: 'MASTER_PIN',
-        role: 'super_admin',
-        module: 'AUTH',
-        status: 'warning',
-        result: 'success',
-        details: 'Security lockout cleared using verified 6-digit Emergency Master PIN.'
-      });
-
-      showToast(t('Master recovery PIN accepted. Console unlocked.', 'मास्टर रिकभरी पिन स्वीकृत। कन्सोल अनलक गरियो।'));
-    } else {
-      setEmergencyPinError(t('Invalid Master Recovery PIN.', 'गलत रिकभरी पिन। कृपया पुनः प्रयास गर्नुहोस्।'));
+    if (!trimmedUser) {
+      setEmergencyPinError(
+        t('Username is required for Master Key authentication.', 'मास्टर की प्रमाणीकरणका लागि प्रयोगकर्ता नाम आवश्यक छ।')
+      );
+      return;
     }
+
+    if (emergencyPinInput.trim() !== correctPin) {
+      setEmergencyPinError(t('Invalid Master Recovery Key / PIN.', 'गलत मास्टर रिकभरी पिन। कृपया पुनः प्रयास गर्नुहोस्।'));
+      return;
+    }
+
+    const matchingAccount = effectiveAccounts.find(
+      (a) => a.username.toLowerCase() === trimmedUser || a.email.toLowerCase() === trimmedUser
+    );
+
+    if (!matchingAccount) {
+      setEmergencyPinError(
+        t('No administrator account found for this username.', 'यो प्रयोगकर्ता नाम भएको प्रशासक खाता फेला परेन।')
+      );
+      return;
+    }
+
+    if (matchingAccount.status !== 'active') {
+      setEmergencyPinError(
+        t('This administrator account has been suspended by the Super Admin.', 'यो प्रशासक खाता सुपर प्रशासकद्वारा निलम्बन गरिएको छ।')
+      );
+      return;
+    }
+
+    forceClearSessionLock();
+    acquireSessionLock(matchingAccount);
+    setIsAuthenticated(true);
+    setCurrentAccount(matchingAccount);
+    safeSessionStorage.setItem('ishwari_admin_auth', 'true');
+    safeSessionStorage.setItem('ishwari_current_account', JSON.stringify(matchingAccount));
+    setFailedAttempts(0);
+    setLockoutUntil(0);
+    safeSessionStorage.removeItem('ishwari_failed_attempts');
+    safeSessionStorage.removeItem('ishwari_lockout_until');
+    setShowEmergencyPinModal(false);
+    setEmergencyUserInput('');
+    setEmergencyPinInput('');
+    setEmergencyPinError('');
+    setAuthError('');
+    setSessionTimeLeft((securityConfig?.sessionTimeoutMinutes || 30) * 60);
+
+    onAddAuditLog({
+      action: 'EMERGENCY_PIN_BYPASS',
+      actor: matchingAccount.username,
+      role: matchingAccount.role,
+      module: 'AUTH',
+      status: 'warning',
+      result: 'success',
+      details: `Account unlocked using verified Master Key for administrator "${matchingAccount.username}".`
+    });
+
+    showToast(t(`Master Key verified. Welcome, ${matchingAccount.fullName}.`, `मास्टर की प्रमाणित भयो। स्वागत छ, ${matchingAccount.fullName}।`));
   };
 
   const handleLockConsole = () => {
     releaseSessionLock();
     setIsAuthenticated(false);
-    sessionStorage.removeItem('ishwari_admin_auth');
-    sessionStorage.removeItem('ishwari_my_session_id');
+    safeSessionStorage.removeItem('ishwari_admin_auth');
+    safeSessionStorage.removeItem('ishwari_my_session_id');
     onAddAuditLog({
       action: 'ADMIN_CONSOLE_LOCKED',
       actor: currentAccount?.username || username,
@@ -632,9 +692,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
     releaseSessionLock();
     setIsAuthenticated(false);
     setCurrentAccount(null);
-    sessionStorage.removeItem('ishwari_admin_auth');
-    sessionStorage.removeItem('ishwari_current_account');
-    sessionStorage.removeItem('ishwari_my_session_id');
+    safeSessionStorage.removeItem('ishwari_admin_auth');
+    safeSessionStorage.removeItem('ishwari_current_account');
+    safeSessionStorage.removeItem('ishwari_my_session_id');
     setPassword('');
     onAddAuditLog({
       action: 'ADMIN_LOGOUT',
@@ -1025,21 +1085,43 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     {emergencyPinError}
                   </div>
                 )}
-                <input
-                  type="password"
-                  maxLength={6}
-                  value={emergencyPinInput}
-                  onChange={(e) => setEmergencyPinInput(e.target.value)}
-                  placeholder="e.g. 782035"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-center text-lg font-mono tracking-widest focus:outline-hidden focus:ring-2 focus:ring-[#1E40AF]"
-                  autoFocus
-                />
+                
+                <div className="space-y-1 text-left">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    {t('Admin Username', 'प्रशासक प्रयोगकर्ता नाम')}
+                  </label>
+                  <input
+                    type="text"
+                    value={emergencyUserInput}
+                    onChange={(e) => setEmergencyUserInput(e.target.value)}
+                    placeholder="e.g. admin or superadmin"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono focus:outline-hidden focus:ring-2 focus:ring-[#1E40AF]"
+                    autoFocus
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1 text-left">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    {t('Master Key (6-Digit Recovery PIN)', 'मास्टर की (६-अङ्कीय रिकभरी पिन)')}
+                  </label>
+                  <input
+                    type="password"
+                    maxLength={6}
+                    value={emergencyPinInput}
+                    onChange={(e) => setEmergencyPinInput(e.target.value)}
+                    placeholder="e.g. 782035"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-center text-lg font-mono tracking-widest focus:outline-hidden focus:ring-2 focus:ring-[#1E40AF]"
+                    required
+                  />
+                </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2">
                   <button
                     type="button"
                     onClick={() => {
                       setShowEmergencyPinModal(false);
+                      setEmergencyUserInput('');
                       setEmergencyPinInput('');
                       setEmergencyPinError('');
                     }}
@@ -1179,8 +1261,76 @@ export const AdminView: React.FC<AdminViewProps> = ({
   // ----------------------------------------------------
   // RENDER: AUTHENTICATED FULL CRUD DASHBOARD
   // ----------------------------------------------------
+  const adminNavTabs = [
+    // 1. Super Admin Master Control
+    ...(currentAccount?.role === 'super_admin' ? [
+      {
+        id: 'super_admin_control',
+        labelEn: 'Super Admin Control',
+        labelNp: 'सुपर प्रशासक नियन्त्रण',
+        icon: SlidersHorizontal,
+      }
+    ] : []),
+
+    // 2. RBAC Management
+    ...(currentAccount?.role === 'super_admin' || can('admin.view') ? [
+      {
+        id: 'rbac_admin',
+        labelEn: `RBAC & Admins (${effectiveAccounts.length})`,
+        labelNp: `प्रशासक खाताहरू (${effectiveAccounts.length})`,
+        icon: ShieldCheck,
+      }
+    ] : []),
+
+    ...(currentAccount?.role === 'super_admin' || can('settings.view') ? [
+      { id: 'customizer', labelEn: 'Site Layout & Content', labelNp: 'वेबसाइट रूपरेखा तथा सामग्री', icon: Layout },
+      { id: 'profile', labelEn: 'Institutional Info', labelNp: 'संस्थागत विवरण', icon: Building2 },
+      { id: 'principal', labelEn: "Principal's Desk", labelNp: 'प्रअको सन्देश', icon: Quote },
+    ] : []),
+
+    ...(can('notice.view') ? [
+      { id: 'notices', labelEn: `Notices (${notices.length})`, labelNp: `सूचनाहरू (${notices.length})`, icon: Bell },
+    ] : []),
+
+    ...(can('teacher.view') || can('staff.view') ? [
+      { id: 'staff', labelEn: `Faculty (${staff.length})`, labelNp: `शिक्षक/कर्मचारी (${staff.length})`, icon: Users },
+    ] : []),
+
+    ...(can('program.view') ? [
+      { id: 'academics', labelEn: `Programs (${programs.length})`, labelNp: `शैक्षिक कार्यक्रम (${programs.length})`, icon: BookOpen },
+    ] : []),
+
+    ...(can('facility.view') ? [
+      { id: 'facilities', labelEn: `Facilities (${facilities.length})`, labelNp: `पूर्वाधार (${facilities.length})`, icon: Building2 },
+    ] : []),
+
+    ...(can('event.view') || can('achievement.view') ? [
+      { id: 'events_extra', labelEn: `Events & History (${events.length + achievements.length})`, labelNp: `कार्यक्रम तथा इतिहास`, icon: CalendarDays },
+    ] : []),
+
+    ...(can('gallery.view') ? [
+      { id: 'gallery', labelEn: `Photo Gallery (${gallery.length})`, labelNp: `फोटो ग्यालरी (${gallery.length})`, icon: Image },
+    ] : []),
+
+    ...(can('document.view') ? [
+      { id: 'documents', labelEn: `Documents (${documents.length})`, labelNp: `दस्तावेज (${documents.length})`, icon: FolderDown },
+    ] : []),
+
+    ...(can('message.view') ? [
+      { id: 'messages', labelEn: `Inquiries (${messages.length})`, labelNp: `सन्देश (${messages.length})`, icon: MessageSquare, badge: messages.filter(m => m.status === 'new').length },
+    ] : []),
+
+    ...(currentAccount?.role === 'super_admin' ? [
+      { id: 'security', labelEn: 'Security & Stealth Link', labelNp: 'सुरक्षा तथा गोप्य मार्ग', icon: ShieldAlert },
+      { id: 'system', labelEn: 'Database Backup & Restore', labelNp: 'डाटाबेस ब्याकअप तथा रिस्टोर', icon: Database },
+    ] : []),
+  ];
+
+  const currentTab = adminNavTabs.find(t => t.id === activeTab) || adminNavTabs[0];
+  const roleTitle = currentAccount?.role === 'super_admin' ? 'Superadmin' : 'Admin Panel';
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row">
       {/* Toast notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-900 text-white border border-[#1E40AF] shadow-2xl text-xs font-medium animate-in fade-in slide-in-from-bottom-2">
@@ -1189,201 +1339,154 @@ export const AdminView: React.FC<AdminViewProps> = ({
         </div>
       )}
 
-      {/* TOP CONTROL BAR */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#1E40AF] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-[#1E40AF]/20">
-            {currentAccount?.fullName ? currentAccount.fullName.charAt(0) : 'ई'}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                {currentAccount ? currentAccount.fullName : t('Ishwari Model School CMS Dashboard', 'ईश्वरी नमुना मावि प्रशासनिक कन्ट्रोल प्यानल')}
-              </h2>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                currentAccount?.role === 'super_admin'
-                  ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-800'
-                  : 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800'
-              }`}>
-                {currentAccount?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
-              </span>
-              <span className="text-[11px] font-mono text-slate-400">
-                @{currentAccount?.username || username}
-              </span>
+      {/* LEFT SIDEBAR NAVIGATION */}
+      <aside className="w-full md:w-64 lg:w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
+        {/* Simple Brand Header in Sidebar */}
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white shadow-xs ${
+              currentAccount?.role === 'super_admin' ? 'bg-purple-700' : 'bg-[#1E40AF]'
+            }`}>
+              {currentAccount?.role === 'super_admin' ? <ShieldCheck className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {t('Role-Based Institutional CMS with Master Audit Logging & Dynamic UI Management', 'भूमिकामा आधारित संस्थागत सीएमएस तथा प्रत्यक्ष व्यवस्थापन प्रणाली')}
-            </p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
+                {roleTitle}
+              </h1>
+              <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+                @{currentAccount?.username || username}
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Active Session Countdown */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-            <Clock className="w-3.5 h-3.5 text-[#1E40AF]" />
-            <span>
-              {Math.floor(sessionTimeLeft / 60)}:{(sessionTimeLeft % 60).toString().padStart(2, '0')}
+        {/* Sidebar Nav Items */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto md:max-h-[calc(100vh-190px)]">
+          {adminNavTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer text-left ${
+                  isActive
+                    ? 'bg-[#1E40AF] text-white shadow-xs font-bold'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#1E40AF] dark:text-blue-400'}`} />
+                  <span className="truncate">{t(tab.labelEn, tab.labelNp)}</span>
+                </div>
+                {tab.badge && tab.badge > 0 ? (
+                  <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold font-mono shrink-0">
+                    {tab.badge}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Bottom Actions */}
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+          <button
+            onClick={onNavigateHome}
+            className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+          >
+            <Eye className="w-3.5 h-3.5 text-[#1E40AF] dark:text-blue-400" />
+            <span>{t('View Public Site', 'वेबसाइट हेर्नुहोस्')}</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleLockConsole}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 border border-amber-200 dark:border-amber-800 transition cursor-pointer"
+              title="Lock Console"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>{t('Lock', 'लक')}</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-bold bg-[#1E40AF] hover:bg-[#1D4ED8] text-white transition cursor-pointer"
+            >
+              <Unlock className="w-3.5 h-3.5" />
+              <span>{t('Logout', 'लगआउट')}</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* RIGHT MAIN CONTENT AREA */}
+      <main className="flex-1 flex flex-col min-w-0">
+        {/* Simple, sleek top header bar */}
+        <header className="h-16 px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <h2 className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white">
+              {roleTitle}
+            </h2>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">
+              {t(currentTab?.labelEn || '', currentTab?.labelNp || '')}
             </span>
           </div>
 
-          {/* Lang Toggle */}
-          {onToggleLang && (
-            <button
-              onClick={onToggleLang}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-              title="Toggle Language / भाषा बदल्नुहोस्"
-            >
-              <Globe className="w-3.5 h-3.5 text-[#1E40AF]" />
-              <span>{lang === 'en' ? 'नेपाली' : 'EN'}</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Active Session Countdown */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              <Clock className="w-3.5 h-3.5 text-[#1E40AF]" />
+              <span>
+                {Math.floor(sessionTimeLeft / 60)}:{(sessionTimeLeft % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
 
-          {/* Theme Toggle */}
-          {onToggleTheme && (
-            <button
-              onClick={onToggleTheme}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-              title="Toggle Theme"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-3.5 h-3.5 text-amber-500" />
-              ) : (
-                <Moon className="w-3.5 h-3.5 text-slate-600" />
-              )}
-            </button>
-          )}
+            {/* Lang Toggle */}
+            {onToggleLang && (
+              <button
+                onClick={onToggleLang}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                title="Toggle Language"
+              >
+                <Globe className="w-3.5 h-3.5 text-[#1E40AF]" />
+                <span>{lang === 'en' ? 'नेपाली' : 'EN'}</span>
+              </button>
+            )}
 
-          <button
-            onClick={onNavigateHome}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-          >
-            <Eye className="w-3.5 h-3.5 text-[#1E40AF]" />
-            <span>{t('View Public Site', 'वेबसाइट हेर्नुहोस्')}</span>
-          </button>
+            {/* Theme Toggle */}
+            {onToggleTheme && (
+              <button
+                onClick={onToggleTheme}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                title="Toggle Theme"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-3.5 h-3.5 text-amber-500" />
+                ) : (
+                  <Moon className="w-3.5 h-3.5 text-slate-600" />
+                )}
+              </button>
+            )}
 
-          <button
-            onClick={handleLockConsole}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 border border-amber-200 dark:border-amber-800 transition cursor-pointer"
-            title="Lock active session without losing changes"
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span>{t('Lock Console', 'कन्सोल लक')}</span>
-          </button>
+            {currentAccount?.role === 'super_admin' && (
+              <button
+                onClick={() => {
+                  if (confirm(t('Reset all content back to factory default government data?', 'के सबै डेटा पूर्वनिर्धारित स्थितिमा रिसेट गर्ने?'))) {
+                    onResetData();
+                    showToast(t('All database tables reset to default.', 'डेटा रिसेट गरियो।'));
+                  }
+                }}
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-800 transition cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{t('Reset', 'रिसेट')}</span>
+              </button>
+            )}
+          </div>
+        </header>
 
-          {currentAccount?.role === 'super_admin' && (
-            <button
-              onClick={() => {
-                if (confirm(t('Reset all content back to factory default government data?', 'के सबै डेटा पूर्वनिर्धारित स्थितिमा रिसेट गर्ने?'))) {
-                  onResetData();
-                  showToast(t('All database tables reset to default.', 'डेटा रिसेट गरियो।'));
-                }
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-800 transition cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>{t('Reset', 'रिसेट')}</span>
-            </button>
-          )}
-
-          <button
-            onClick={handleLogout}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-[#1E40AF] hover:bg-[#1D4ED8] text-white shadow-xs transition cursor-pointer"
-          >
-            <Unlock className="w-3.5 h-3.5" />
-            <span>{t('Logout', 'लगआउट')}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* DASHBOARD NAVIGATION TABS */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800">
-        {[
-          // 1. Super Admin Master Control
-          ...(currentAccount?.role === 'super_admin' ? [
-            {
-              id: 'super_admin_control',
-              labelEn: 'Super Admin Control',
-              labelNp: 'सुपर प्रशासक नियन्त्रण',
-              icon: Sparkles,
-            }
-          ] : []),
-
-          // 2. RBAC Management
-          ...(currentAccount?.role === 'super_admin' || can('admin.view') ? [
-            {
-              id: 'rbac_admin',
-              labelEn: `RBAC & Admins (${effectiveAccounts.length})`,
-              labelNp: `प्रशासक खाताहरू (${effectiveAccounts.length})`,
-              icon: ShieldCheck,
-            }
-          ] : []),
-
-          ...(currentAccount?.role === 'super_admin' || can('settings.view') ? [
-            { id: 'customizer', labelEn: 'Site Layout & Content', labelNp: 'वेबसाइट रूपरेखा तथा सामग्री', icon: Layout },
-            { id: 'profile', labelEn: 'Institutional Info', labelNp: 'संस्थागत विवरण', icon: Building2 },
-            { id: 'principal', labelEn: "Principal's Desk", labelNp: 'प्रअको सन्देश', icon: Sparkles },
-          ] : []),
-
-          ...(can('notice.view') ? [
-            { id: 'notices', labelEn: `Notices (${notices.length})`, labelNp: `सूचनाहरू (${notices.length})`, icon: Bell },
-          ] : []),
-
-          ...(can('teacher.view') || can('staff.view') ? [
-            { id: 'staff', labelEn: `Faculty (${staff.length})`, labelNp: `शिक्षक/कर्मचारी (${staff.length})`, icon: Users },
-          ] : []),
-
-          ...(can('program.view') ? [
-            { id: 'academics', labelEn: `Programs (${programs.length})`, labelNp: `शैक्षिक कार्यक्रम (${programs.length})`, icon: BookOpen },
-          ] : []),
-
-          ...(can('facility.view') ? [
-            { id: 'facilities', labelEn: `Facilities (${facilities.length})`, labelNp: `पूर्वाधार (${facilities.length})`, icon: Building2 },
-          ] : []),
-
-          ...(can('event.view') || can('achievement.view') ? [
-            { id: 'events_extra', labelEn: `Events & History (${events.length + achievements.length})`, labelNp: `कार्यक्रम तथा इतिहास`, icon: CalendarDays },
-          ] : []),
-
-          ...(can('gallery.view') ? [
-            { id: 'gallery', labelEn: `Photo Gallery (${gallery.length})`, labelNp: `फोटो ग्यालरी (${gallery.length})`, icon: Image },
-          ] : []),
-
-          ...(can('document.view') ? [
-            { id: 'documents', labelEn: `Documents (${documents.length})`, labelNp: `दस्तावेज (${documents.length})`, icon: FolderDown },
-          ] : []),
-
-          ...(can('message.view') ? [
-            { id: 'messages', labelEn: `Inquiries (${messages.length})`, labelNp: `सन्देश (${messages.length})`, icon: MessageSquare, badge: messages.filter(m => m.status === 'new').length },
-          ] : []),
-
-          ...(currentAccount?.role === 'super_admin' ? [
-            { id: 'security', labelEn: 'Security & Stealth Link', labelNp: 'सुरक्षा तथा गोप्य मार्ग', icon: ShieldAlert },
-            { id: 'system', labelEn: 'Database Backup & Restore', labelNp: 'डाटाबेस ब्याकअप तथा रिस्टोर', icon: Database },
-          ] : []),
-        ].map((tab) => {
-          const isActive = activeTab === tab.id;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                isActive
-                  ? 'bg-[#1E40AF] text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#1E40AF]'}`} />
-              <span>{t(tab.labelEn, tab.labelNp)}</span>
-              {tab.badge && tab.badge > 0 ? (
-                <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold font-mono">
-                  {tab.badge}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+        {/* Tab Content Canvas */}
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
 
       {/* TAB: SUPER ADMIN CONTROL CENTER */}
       {activeTab === 'super_admin_control' && (
@@ -1535,6 +1638,64 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
               />
             </div>
+            {/* School Logo / Crest Field */}
+            <div className="md:col-span-2 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-3">
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                {t('Official School Logo / Crest Image', 'विद्यालयको आधिकारिक लोगो / छाप')}
+              </label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 border-2 border-[#1E40AF]/30 p-1 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                  {schoolForm.logo_url ? (
+                    <img src={schoolForm.logo_url} alt="School Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <span className="font-serif font-black text-2xl text-[#1E40AF]">ई</span>
+                  )}
+                </div>
+                <div className="flex-1 space-y-2 w-full">
+                  <input
+                    type="text"
+                    placeholder={t('Enter Image URL (e.g., https://... or data:image/...)', 'लोगोको URL राख्नुहोस्')}
+                    value={schoolForm.logo_url || ''}
+                    onChange={e => setSchoolForm({ ...schoolForm, logo_url: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
+                  />
+                  <div className="flex items-center gap-2">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[#1E40AF] dark:text-blue-300 text-xs font-semibold hover:bg-blue-100 border border-blue-200 dark:border-blue-800 cursor-pointer transition">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{t('Upload Logo File', 'लोगो फाइल अपलोड गर्नुहोस्')}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (evt) => {
+                              if (evt.target?.result) {
+                                setSchoolForm({ ...schoolForm, logo_url: evt.target.result as string });
+                                showToast(t('School logo loaded. Click Save below to apply.', 'लोगो लोड भयो। सुरक्षित गर्नुहोस्।'));
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    {schoolForm.logo_url && (
+                      <button
+                        type="button"
+                        onClick={() => setSchoolForm({ ...schoolForm, logo_url: '' })}
+                        className="px-2 py-1.5 text-xs text-red-600 hover:text-red-700 font-semibold"
+                      >
+                        {t('Remove', 'हटाउनुहोस्')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Official EMIS Code</label>
               <input
@@ -1608,7 +1769,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
         <form onSubmit={handleSaveSchool} className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
           <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#1E40AF]" />
+              <Quote className="w-4 h-4 text-[#1E40AF]" />
               <span>{t("Principal's Desk & Speech", 'प्रधानाध्यापकको सन्देश सम्पादन')}</span>
             </h3>
             <p className="text-xs text-slate-500">{t('Manage headmaster name and official message shown on homepage.', 'गृहपृष्ठमा देखिने प्रअको सन्देश')}</p>
@@ -2314,6 +2475,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
           )}
         </div>
       )}
+        </div>
+      </main>
     </div>
   );
 };

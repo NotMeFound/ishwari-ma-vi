@@ -25,7 +25,6 @@ import {
   ShieldCheck,
   MapPin,
   ExternalLink,
-  Sparkles,
   ChevronDown
 } from 'lucide-react';
 
@@ -57,17 +56,51 @@ const NepalFlag: React.FC<{ className?: string }> = ({ className = "w-3.5 h-4" }
   </svg>
 );
 
-// Institutional Seal Emblem Component
-const InstitutionalCrest: React.FC = () => (
-  <div className="relative w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-linear-to-br from-[#1E3A8A] via-[#1E40AF] to-[#0F172A] border-2 border-amber-400/70 p-1 shadow-md shadow-blue-900/30 shrink-0 flex items-center justify-center text-white overflow-hidden group">
-    {/* Subtle inner seal ring */}
-    <div className="absolute inset-0.5 rounded-xl border border-dashed border-amber-300/40 pointer-events-none" />
-    <div className="flex flex-col items-center justify-center leading-none text-center select-none">
-      <span className="font-serif font-black text-xl sm:text-2xl text-amber-200 drop-shadow-xs">ई</span>
-      <span className="text-[8px] sm:text-[9px] font-mono tracking-widest text-blue-100 font-bold uppercase mt-0.5">२०३५</span>
-    </div>
+// Animated Fluttering Nepal Flag Component
+const FlutteringNepalFlag: React.FC<{ className?: string }> = ({ className = "w-3.5 h-4.5" }) => (
+  <div className="relative inline-flex items-center justify-center filter drop-shadow-xs select-none">
+    <motion.div
+      animate={{
+        skewY: [-1.5, 1.5, -1.5],
+        rotate: [-1, 1, -1],
+      }}
+      transition={{
+        duration: 2.5,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+      className="shrink-0 flex items-center justify-center origin-left"
+    >
+      <NepalFlag className={className} />
+    </motion.div>
   </div>
 );
+
+// Institutional Seal Emblem Component with custom logo support
+const InstitutionalCrest: React.FC<{ school: SchoolData }> = ({ school }) => {
+  if (school.logo_url && school.logo_url.trim().length > 0) {
+    return (
+      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-slate-900 border-2 border-amber-400/80 p-1 shadow-md shadow-blue-950/20 shrink-0 flex items-center justify-center overflow-hidden">
+        <img
+          src={school.logo_url}
+          alt={school.name_en}
+          className="w-full h-full object-contain rounded-xl"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-linear-to-br from-[#1E3A8A] via-[#1E40AF] to-[#0F172A] border-2 border-amber-400/80 p-1 shadow-md shadow-blue-900/30 shrink-0 flex items-center justify-center text-white overflow-hidden group">
+      {/* Subtle inner seal ring */}
+      <div className="absolute inset-0.5 rounded-xl border border-dashed border-amber-300/40 pointer-events-none" />
+      <div className="flex flex-col items-center justify-center leading-none text-center select-none">
+        <span className="font-serif font-black text-xl sm:text-2xl text-amber-200 drop-shadow-xs">ई</span>
+        <span className="text-[8px] sm:text-[9px] font-mono tracking-widest text-blue-100 font-bold uppercase mt-0.5">२०३५</span>
+      </div>
+    </div>
+  );
+};
 
 interface HeaderProps {
   lang: Language;
@@ -104,15 +137,20 @@ export const Header: React.FC<HeaderProps> = ({
   const isNp = lang === 'np';
   const t = (en: string, np: string) => (isNp ? np : en);
 
-  // Automated Pinned Notices Ticker with Fallback
-  const pinnedNotices = notices.filter(n => n.pinned);
-  const tickerItems = pinnedNotices.length > 0
-    ? pinnedNotices.map(n => isNp ? (n.title_np || n.title_en) : (n.title_en || n.title_np))
+  // Automated Pinned or Latest Notices Ticker
+  const activeTickerNotices = notices.filter(n => n.pinned).length > 0
+    ? notices.filter(n => n.pinned)
+    : notices.slice(0, 4);
+
+  const tickerItems = activeTickerNotices.length > 0
+    ? activeTickerNotices.map(n => isNp ? (n.title_np || n.title_en) : (n.title_en || n.title_np))
     : [
         isNp
-          ? (siteConfig?.alertTickerNp || 'शैक्षिक सत्र २०८३ को वार्षिक परीक्षा तालिका (कक्षा १ देखि ९ सम्म) प्रकाशित गरिएको बारे')
-          : (siteConfig?.alertTickerEn || 'Annual Examination Routine (Grades 1 to 9) Published for Session 2083')
+          ? (siteConfig?.alertTickerNp || 'शैक्षिक सत्र २०८३ को वार्षिक परीक्षा तालिका तथा नयाँ भर्ना सम्बन्धी सूचना')
+          : (siteConfig?.alertTickerEn || 'Notice regarding Academic Session 2083 Annual Examination & Admissions')
       ];
+
+  const tickerKey = `ticker-${activeTickerNotices.map(n => `${n.id}-${n.pinned}`).join('_')}-${isNp ? 'np' : 'en'}`;
 
   // Close "More" dropdown on route change or clicking outside
   useEffect(() => {
@@ -207,22 +245,22 @@ export const Header: React.FC<HeaderProps> = ({
       {/* 1. TOP UTILITY & GOVERNMENT ACCREDITATION STRIP */}
       <div className="bg-[#0B1528] text-slate-200 border-b border-slate-800 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex flex-wrap items-center justify-between gap-2.5">
-          {/* Left: Official Government Affiliation & Urgent Circular Ticker */}
+          {/* Left: Official Flag & Urgent Circular Ticker */}
           <div className="flex items-center space-x-3 overflow-hidden flex-1 min-w-0">
-            {/* Government Seal Tag */}
-            <div className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-300 border-r border-slate-700 pr-3 shrink-0">
-              <NepalFlag className="w-3 h-3.5" />
-              <span>{t('Government of Nepal • Model School', 'नेपाल सरकार • नमुना माध्यमिक विद्यालय')}</span>
+            {/* National Flag of Nepal (Animated Wave) */}
+            <div className="inline-flex items-center border-r border-slate-800 pr-3 shrink-0" title={t('National Flag of Nepal', 'नेपालको राष्ट्रिय झण्डा')}>
+              <FlutteringNepalFlag className="w-3.5 h-4.5" />
             </div>
 
-            {/* Latest News Automatic Continuous Ticker */}
+            {/* Latest News Automatic Continuous Ticker with Dim Sky Blue Badge */}
             {(siteConfig ? siteConfig.showAlertTicker : true) && (
               <div className="flex items-center space-x-2.5 overflow-hidden min-w-0 flex-1">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[10px] font-bold bg-amber-400 text-slate-950 tracking-wider shrink-0 shadow-xs uppercase">
-                  <Bell className="w-2.5 h-2.5 animate-pulse text-slate-950 stroke-[2.2]" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[10px] font-bold bg-[#0284C7] dark:bg-sky-600 text-white tracking-wider shrink-0 shadow-xs uppercase">
+                  <Bell className="w-2.5 h-2.5 animate-pulse text-white stroke-[2.2]" />
                   <span>{t('Latest News', 'ताजा समाचार')}</span>
                 </span>
                 <div
+                  key={tickerKey}
                   onClick={() => onRouteChange('notices')}
                   className="overflow-hidden flex-1 relative cursor-pointer"
                   title={t('Click to view all notices', 'सबै सूचनाहरू हेर्न क्लिक गर्नुहोस्')}
@@ -365,17 +403,17 @@ export const Header: React.FC<HeaderProps> = ({
               className="cursor-pointer focus:outline-hidden"
               aria-label="Go to homepage"
             >
-              <InstitutionalCrest />
+              <InstitutionalCrest school={school} />
             </button>
 
             <div className="text-left space-y-0.5">
-              {/* Badges: National Affiliation + School Code */}
+              {/* Badges: School Code & Establishment */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 dark:bg-blue-950/50 text-[#1E40AF] dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 uppercase tracking-wide">
-                  {t(school.affiliation_en, school.affiliation_np)}
-                </span>
-                <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
                   {school.code}
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-50 dark:bg-blue-950/50 text-[#1E40AF] dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
+                  {t(`Estd. ${school.estd_bs}`, `वि.सं. ${school.estd_bs}`)}
                 </span>
               </div>
 
@@ -385,9 +423,9 @@ export const Header: React.FC<HeaderProps> = ({
                   onClick={() => onRouteChange('home')}
                   className="hover:text-[#1E40AF] dark:hover:text-blue-400 transition text-left cursor-pointer"
                 >
-                  <span className="block font-bold">{t(school.name_np, school.name_en)}</span>
+                  <span className="block font-bold">{isNp ? school.name_np : school.name_en}</span>
                   <span className="block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 font-sans tracking-normal">
-                    {t(school.name_en, school.name_np)}
+                    {isNp ? school.name_en : school.name_np}
                   </span>
                 </button>
               </h1>
@@ -396,8 +434,8 @@ export const Header: React.FC<HeaderProps> = ({
               <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-1.5">
                 <span>{t(school.tagline_en, school.tagline_np)}</span>
                 <span className="text-slate-300 dark:text-slate-700">•</span>
-                <span className="font-mono text-[10px] text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
-                  <span>{t(`Estd. ${school.estd_bs}`, `स्थापना: वि.सं. ${school.estd_bs}`)}</span>
+                <span className="text-slate-600 dark:text-slate-400 font-medium">
+                  {t(school.address_en, school.address_np)}
                 </span>
               </p>
             </div>
@@ -721,7 +759,7 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               className="w-full py-2 px-3 rounded-lg bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs"
             >
-              <Sparkles className="w-4 h-4 text-emerald-200" />
+              <GraduationCap className="w-4 h-4 text-emerald-200" />
               <span>{t('Online Admission 2083 Open', 'नयाँ भर्ना २०८३ खुला')}</span>
             </button>
           </div>

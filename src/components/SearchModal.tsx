@@ -86,10 +86,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             autoFocus
           />
           <button
+            type="button"
             onClick={onClose}
-            className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 text-[11px] font-mono hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+            title={t('Close search', 'खोजी बन्द गर्नुहोस्')}
+            aria-label={t('Close search', 'खोजी बन्द गर्नुहोस्')}
+            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shrink-0"
           >
-            ESC
+            <X className="w-4 h-4 stroke-[2]" />
           </button>
         </div>
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Language, SchoolEvent } from '../types';
-import { Calendar, Clock, MapPin, CalendarDays, Sparkles } from 'lucide-react';
+import { Calendar, Clock, MapPin, CalendarDays } from 'lucide-react';
 
 interface EventsViewProps {
   lang: Language;

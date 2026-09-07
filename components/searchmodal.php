@@ -23,7 +23,7 @@ $app = AppControl::getInstance();
 
         <div class="p-2.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 flex justify-between px-4">
             <span><?= $app->t('Press ESC to close', 'बन्द गर्न ESC थिच्नुहोस्') ?></span>
-            <span>Ishwari Secondary School Directory</span>
+            <span>Shree Ishwari Secondary School Directory</span>
         </div>
     </div>
 </div>

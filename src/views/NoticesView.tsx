@@ -11,6 +11,7 @@ import {
   X,
   Eye,
   ChevronDown,
+  ChevronRight,
   AlertCircle,
   FileCheck2,
   ExternalLink
@@ -272,15 +273,18 @@ Ishwari Secondary School Administration
               </div>
             </div>
 
-            {/* Modal Footer */}
+            {/* Modal Footer: Bottom-left: subtle/dim red close icon; Bottom-right: vivid purple download icon */}
             <div className="p-4 bg-slate-50/80 dark:bg-slate-950/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setPreviewNotice(null)}
-                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                title={t('Close Notice', 'सूचना बन्द गर्नुहोस्')}
+                aria-label={t('Close Notice', 'सूचना बन्द गर्नुहोस्')}
+                className="p-2 rounded-lg text-red-500/70 hover:text-red-600 dark:text-red-400/70 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
               >
-                {t('Close', 'बन्द')}
+                <X className="w-5 h-5 stroke-[1.8]" />
               </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -288,10 +292,11 @@ Ishwari Secondary School Administration
                   setPreviewNotice(null);
                   setDownloadConfirmNotice(toDownload);
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-black dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                title={t('Download Notice', 'सूचना डाउनलोड गर्नुहोस्')}
+                aria-label={t('Download Notice', 'सूचना डाउनलोड गर्नुहोस्')}
+                className="p-2 rounded-lg text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition cursor-pointer"
               >
-                <Download className="w-4 h-4 stroke-[1.75]" />
-                <span>{t('Download Attachment', 'कागजात डाउनलोड')}</span>
+                <Download className="w-5 h-5 stroke-[1.8]" />
               </button>
             </div>
           </div>
@@ -364,129 +369,62 @@ Ishwari Secondary School Administration
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredNotices.map((notice) => {
-              const isSelected = activeNoticeId === notice.id;
-
-              return (
-                <div
-                  key={notice.id}
-                  onClick={() => handleCardClick(notice.id)}
-                  tabIndex={0}
-                  role="button"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleCardClick(notice.id);
-                    }
-                  }}
-                  aria-expanded={isSelected}
-                  className={`relative rounded-xl bg-white dark:bg-slate-900 border transition-all duration-200 cursor-pointer select-none overflow-hidden ${
-                    isSelected
-                      ? 'border-slate-900 dark:border-white ring-2 ring-slate-900/10 dark:ring-white/10 shadow-md translate-y-[-1px]'
-                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 shadow-2xs hover:shadow-xs'
-                  }`}
-                >
-                  {/* Top Bar inside Box: Category & Date */}
-                  <div className="p-3.5 pb-2 flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/60">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                        {notice.category}
+            {filteredNotices.map((notice) => (
+              <div
+                key={notice.id}
+                onClick={() => setPreviewNotice(notice)}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setPreviewNotice(notice);
+                  }
+                }}
+                className="relative rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 shadow-2xs hover:shadow-xs transition-all duration-150 cursor-pointer select-none overflow-hidden group"
+              >
+                {/* Top Bar inside Box: Category & Date */}
+                <div className="p-3.5 pb-2 flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/60">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      {notice.category}
+                    </span>
+                    {notice.pinned && (
+                      <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-sm bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center gap-0.5">
+                        <Pin className="w-2.5 h-2.5" />
+                        <span>PIN</span>
                       </span>
-                      {notice.pinned && (
-                        <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-sm bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center gap-0.5">
-                          <Pin className="w-2.5 h-2.5" />
-                          <span>PIN</span>
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-slate-400" />
-                      <span>{t(notice.date_en, notice.date_np)}</span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-slate-400" />
+                    <span>{t(notice.date_en, notice.date_np)}</span>
+                  </span>
+                </div>
+
+                {/* Body: Notice Info */}
+                <div className="p-3.5 space-y-2">
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    {t(notice.title_en, notice.title_np)}
+                  </h3>
+
+                  {/* Metadata Pill */}
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-1">
+                    <span className="flex items-center gap-1 truncate max-w-[180px]">
+                      <FileText className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span className="truncate">
+                        {notice.file_size_kb ? `${notice.file_size_kb} KB • PDF` : 'PDF Notice'}
+                      </span>
+                    </span>
+
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 flex items-center gap-0.5">
+                      <span>{t('View', 'हेर्नुहोस्')}</span>
+                      <ChevronRight className="w-3 h-3" />
                     </span>
                   </div>
-
-                  {/* Body: Small & Perfect Size Box Info */}
-                  <div className="p-3.5 space-y-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
-                      {t(notice.title_en, notice.title_np)}
-                    </h3>
-
-                    {/* Metadata Pill */}
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-1">
-                      <span className="flex items-center gap-1 truncate max-w-[180px]">
-                        <FileText className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span className="truncate">
-                          {notice.file_size_kb ? `${notice.file_size_kb} KB • PDF` : 'PDF Notice'}
-                        </span>
-                      </span>
-
-                      {!isSelected && (
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-0.5 group-hover:text-slate-700">
-                          <span>Actions</span>
-                          <ChevronDown className="w-3 h-3" />
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Monochromatic Action Icons Toolbar: Appears only when notice is clicked/tapped */}
-                  {isSelected && (
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      className="px-3 py-2 bg-slate-100/90 dark:bg-slate-800/90 border-t border-slate-200 dark:border-slate-700/80 flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-150"
-                    >
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-medium">
-                        {t('Actions', 'कार्यहरू')}
-                      </span>
-
-                      <div className="flex items-center gap-2">
-                        {/* 1. Close/Hide icon with confirmation */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCloseConfirmNotice(notice);
-                          }}
-                          title={t('Close / Dismiss notice', 'सूचना बन्द / हटाउनुहोस्')}
-                          aria-label="Close / dismiss notice"
-                          className="p-1.5 rounded-lg bg-white dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5 stroke-[2]" />
-                        </button>
-
-                        {/* 2. Eye icon for view details */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPreviewNotice(notice);
-                          }}
-                          title={t('View full notice', 'पूर्ण सूचना हेर्नुहोस्')}
-                          aria-label="View full notice"
-                          className="p-1.5 rounded-lg bg-white dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5 stroke-[2]" />
-                        </button>
-
-                        {/* 3. Download icon with confirmation */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDownloadConfirmNotice(notice);
-                          }}
-                          title={t('Download notice attachment', 'सूचना डाउनलोड गर्नुहोस्')}
-                          aria-label="Download notice attachment"
-                          className="p-1.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-black dark:hover:bg-slate-100 transition shadow-2xs cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5 stroke-[2]" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </div>

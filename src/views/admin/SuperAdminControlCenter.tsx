@@ -9,7 +9,7 @@ import {
 } from '../../types';
 import {
   Sliders,
-  Sparkles,
+  LayoutTemplate,
   Layout,
   Eye,
   EyeOff,
@@ -170,7 +170,7 @@ export const SuperAdminControlCenter: React.FC<SuperAdminControlCenterProps> = (
       <div className="flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto">
         {[
           { id: 'header_ticker', labelEn: 'Header & Latest News Ticker', labelNp: 'हेडर तथा ताजा समाचार टिकर', icon: Bell },
-          { id: 'homepage_hero', labelEn: 'Homepage Hero & Branding', labelNp: 'गृहपृष्ठ हिरो सेक्सन', icon: Sparkles },
+          { id: 'homepage_hero', labelEn: 'Homepage Hero & Branding', labelNp: 'गृहपृष्ठ हिरो सेक्सन', icon: LayoutTemplate },
           { id: 'stats_counters', labelEn: 'Key Stats & Counters', labelNp: 'मुख्य तथ्याङ्क तथा काउन्टर', icon: Hash },
           { id: 'section_visibility', labelEn: 'Section Visibility (13 Modules)', labelNp: 'सेक्सन दृश्यता नियन्त्रण', icon: Layout },
           { id: 'school_identity', labelEn: 'Institution Identity & Affiliation', labelNp: 'विद्यालय परिचय तथा सम्बन्धन', icon: School },
@@ -277,7 +277,7 @@ export const SuperAdminControlCenter: React.FC<SuperAdminControlCenterProps> = (
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 shadow-2xs text-xs">
           <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#1E40AF]" />
+              <LayoutTemplate className="w-4 h-4 text-[#1E40AF]" />
               <span>{t('Homepage Hero Section & Academic Badges', 'गृहपृष्ठ हिरो सेक्सन तथा शैक्षिक ब्याच')}</span>
             </h3>
             <p className="text-xs text-slate-500">

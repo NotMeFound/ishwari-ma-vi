@@ -3,7 +3,7 @@ import { Language, SiteCustomizerConfig } from '../../types';
 import {
   Eye,
   Sliders,
-  Sparkles,
+  LayoutTemplate,
   Save,
   RotateCcw,
   CheckCircle2,
@@ -163,7 +163,7 @@ export const SiteCustomizerTab: React.FC<SiteCustomizerTabProps> = ({
       {/* 3. HERO BANNER COPY CUSTOMIZER */}
       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 shadow-xs">
         <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3.5">
-          <Sparkles className="w-4 h-4 text-[#1E40AF]" />
+          <LayoutTemplate className="w-4 h-4 text-[#1E40AF]" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             {t('Hero Section Headline & Messaging', 'गृहपृष्ठ मुख्य ब्यानर (Hero Section)')}
           </h3>

@@ -25,6 +25,7 @@ import {
   AdminAccount
 } from './types';
 import { loadAdminAccounts, saveAdminAccounts } from './utils/security';
+import { safeStorage } from './utils/storage';
 import {
   initialSchoolData,
   initialNotices,
@@ -64,20 +65,24 @@ import { AdminView } from './views/AdminView';
 export default function App() {
   // 1. Language State
   const [lang, setLang] = useState<Language>(() => {
-    const saved = localStorage.getItem('ishwari_lang');
+    const saved = safeStorage.getItem('ishwari_lang');
     return (saved as Language) || 'np';
   });
 
   // 2. Theme State - Strictly defaults to 'light' mode
   const [theme, setTheme] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem('ishwari_theme_mode');
+    const saved = safeStorage.getItem('ishwari_theme_mode');
     return saved === 'dark' ? 'dark' : 'light';
   });
 
   // 3. Active Route with URL hash synchronization
   const [activeRoute, setActiveRoute] = useState<string>(() => {
-    const hash = window.location.hash.replace('#', '').trim();
-    return hash || 'home';
+    try {
+      const hash = window.location.hash.replace('#', '').trim();
+      return hash || 'home';
+    } catch {
+      return 'home';
+    }
   });
 
   // 4. Search Modal State
@@ -85,63 +90,51 @@ export default function App() {
 
   // 5. Managed School Data & Records
   const [school, setSchool] = useState<SchoolData>(() => {
-    const saved = localStorage.getItem('ishwari_school_data');
-    return saved ? JSON.parse(saved) : initialSchoolData;
+    return safeStorage.getJSON('ishwari_school_data', initialSchoolData);
   });
 
   const [notices, setNotices] = useState<Notice[]>(() => {
-    const saved = localStorage.getItem('ishwari_notices');
-    return saved ? JSON.parse(saved) : initialNotices;
+    return safeStorage.getJSON('ishwari_notices', initialNotices);
   });
 
   const [staff, setStaff] = useState<StaffMember[]>(() => {
-    const saved = localStorage.getItem('ishwari_staff');
-    return saved ? JSON.parse(saved) : initialStaff;
+    return safeStorage.getJSON('ishwari_staff', initialStaff);
   });
 
   const [facilities, setFacilities] = useState<Facility[]>(() => {
-    const saved = localStorage.getItem('ishwari_facilities');
-    return saved ? JSON.parse(saved) : initialFacilities;
+    return safeStorage.getJSON('ishwari_facilities', initialFacilities);
   });
 
   const [programs, setPrograms] = useState<AcademicProgram[]>(() => {
-    const saved = localStorage.getItem('ishwari_programs');
-    return saved ? JSON.parse(saved) : initialPrograms;
+    return safeStorage.getJSON('ishwari_programs', initialPrograms);
   });
 
   const [documents, setDocuments] = useState<DocumentItem[]>(() => {
-    const saved = localStorage.getItem('ishwari_documents');
-    return saved ? JSON.parse(saved) : initialDocuments;
+    return safeStorage.getJSON('ishwari_documents', initialDocuments);
   });
 
   const [messages, setMessages] = useState<ContactMessage[]>(() => {
-    const saved = localStorage.getItem('ishwari_messages');
-    return saved ? JSON.parse(saved) : initialMessages;
+    return safeStorage.getJSON('ishwari_messages', initialMessages);
   });
 
   const [events, setEvents] = useState<SchoolEvent[]>(() => {
-    const saved = localStorage.getItem('ishwari_events');
-    return saved ? JSON.parse(saved) : initialEvents;
+    return safeStorage.getJSON('ishwari_events', initialEvents);
   });
 
   const [achievements, setAchievements] = useState<Achievement[]>(() => {
-    const saved = localStorage.getItem('ishwari_achievements');
-    return saved ? JSON.parse(saved) : initialAchievements;
+    return safeStorage.getJSON('ishwari_achievements', initialAchievements);
   });
 
   const [history, setHistory] = useState<HistoryItem[]>(() => {
-    const saved = localStorage.getItem('ishwari_history');
-    return saved ? JSON.parse(saved) : initialHistory;
+    return safeStorage.getJSON('ishwari_history', initialHistory);
   });
 
   const [gallery, setGallery] = useState<GalleryItem[]>(() => {
-    const saved = localStorage.getItem('ishwari_gallery');
-    return saved ? JSON.parse(saved) : initialGallery;
+    return safeStorage.getJSON('ishwari_gallery', initialGallery);
   });
 
   const [siteConfig, setSiteConfig] = useState<SiteCustomizerConfig>(() => {
-    const saved = localStorage.getItem('ishwari_site_config');
-    const parsed = saved ? JSON.parse(saved) : initialSiteConfig;
+    const parsed = safeStorage.getJSON('ishwari_site_config', initialSiteConfig);
     return {
       ...parsed,
       primaryColor: '#1E3A8A',
@@ -150,13 +143,11 @@ export default function App() {
   });
 
   const [securityConfig, setSecurityConfig] = useState<SecurityConfig>(() => {
-    const saved = localStorage.getItem('ishwari_security_config');
-    return saved ? JSON.parse(saved) : initialSecurityConfig;
+    return safeStorage.getJSON('ishwari_security_config', initialSecurityConfig);
   });
 
   const [auditLogs, setAuditLogs] = useState<SecurityAuditLogEntry[]>(() => {
-    const saved = localStorage.getItem('ishwari_audit_logs');
-    return saved ? JSON.parse(saved) : initialAuditLogs;
+    return safeStorage.getJSON('ishwari_audit_logs', initialAuditLogs);
   });
 
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>(() => {
@@ -166,9 +157,13 @@ export default function App() {
   // Listen to hashchange for direct linking (e.g., #admin, #notices, #admin-portal)
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '').trim();
-      if (hash) {
-        setActiveRoute(hash);
+      try {
+        const hash = window.location.hash.replace('#', '').trim();
+        if (hash) {
+          setActiveRoute(hash);
+        }
+      } catch {
+        // Ignore hash change errors
       }
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -177,72 +172,74 @@ export default function App() {
 
   // Save to LocalStorage on modifications
   useEffect(() => {
-    localStorage.setItem('ishwari_lang', lang);
+    safeStorage.setItem('ishwari_lang', lang);
   }, [lang]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_theme_mode', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    safeStorage.setItem('ishwari_theme_mode', theme);
+    if (typeof document !== 'undefined') {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
   }, [theme]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_school_data', JSON.stringify(school));
+    safeStorage.setJSON('ishwari_school_data', school);
   }, [school]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_notices', JSON.stringify(notices));
+    safeStorage.setJSON('ishwari_notices', notices);
   }, [notices]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_staff', JSON.stringify(staff));
+    safeStorage.setJSON('ishwari_staff', staff);
   }, [staff]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_facilities', JSON.stringify(facilities));
+    safeStorage.setJSON('ishwari_facilities', facilities);
   }, [facilities]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_programs', JSON.stringify(programs));
+    safeStorage.setJSON('ishwari_programs', programs);
   }, [programs]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_documents', JSON.stringify(documents));
+    safeStorage.setJSON('ishwari_documents', documents);
   }, [documents]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_messages', JSON.stringify(messages));
+    safeStorage.setJSON('ishwari_messages', messages);
   }, [messages]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_events', JSON.stringify(events));
+    safeStorage.setJSON('ishwari_events', events);
   }, [events]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_achievements', JSON.stringify(achievements));
+    safeStorage.setJSON('ishwari_achievements', achievements);
   }, [achievements]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_history', JSON.stringify(history));
+    safeStorage.setJSON('ishwari_history', history);
   }, [history]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_gallery', JSON.stringify(gallery));
+    safeStorage.setJSON('ishwari_gallery', gallery);
   }, [gallery]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_site_config', JSON.stringify(siteConfig));
+    safeStorage.setJSON('ishwari_site_config', siteConfig);
   }, [siteConfig]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_security_config', JSON.stringify(securityConfig));
+    safeStorage.setJSON('ishwari_security_config', securityConfig);
   }, [securityConfig]);
 
   useEffect(() => {
-    localStorage.setItem('ishwari_audit_logs', JSON.stringify(auditLogs));
+    safeStorage.setJSON('ishwari_audit_logs', auditLogs);
   }, [auditLogs]);
 
   useEffect(() => {
@@ -271,8 +268,12 @@ export default function App() {
 
   const handleRouteChange = (route: string) => {
     setActiveRoute(route);
-    window.location.hash = route;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      window.location.hash = route;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      // Ignore scroll errors in sandboxed iframes
+    }
   };
 
   const handleResetData = () => {
@@ -291,20 +292,20 @@ export default function App() {
     setSecurityConfig(initialSecurityConfig);
     setAuditLogs(initialAuditLogs);
 
-    localStorage.removeItem('ishwari_school_data');
-    localStorage.removeItem('ishwari_notices');
-    localStorage.removeItem('ishwari_staff');
-    localStorage.removeItem('ishwari_facilities');
-    localStorage.removeItem('ishwari_programs');
-    localStorage.removeItem('ishwari_documents');
-    localStorage.removeItem('ishwari_messages');
-    localStorage.removeItem('ishwari_events');
-    localStorage.removeItem('ishwari_achievements');
-    localStorage.removeItem('ishwari_history');
-    localStorage.removeItem('ishwari_gallery');
-    localStorage.removeItem('ishwari_site_config');
-    localStorage.removeItem('ishwari_security_config');
-    localStorage.removeItem('ishwari_audit_logs');
+    safeStorage.removeItem('ishwari_school_data');
+    safeStorage.removeItem('ishwari_notices');
+    safeStorage.removeItem('ishwari_staff');
+    safeStorage.removeItem('ishwari_facilities');
+    safeStorage.removeItem('ishwari_programs');
+    safeStorage.removeItem('ishwari_documents');
+    safeStorage.removeItem('ishwari_messages');
+    safeStorage.removeItem('ishwari_events');
+    safeStorage.removeItem('ishwari_achievements');
+    safeStorage.removeItem('ishwari_history');
+    safeStorage.removeItem('ishwari_gallery');
+    safeStorage.removeItem('ishwari_site_config');
+    safeStorage.removeItem('ishwari_security_config');
+    safeStorage.removeItem('ishwari_audit_logs');
   };
 
   const handleAddMessage = (msg: ContactMessage) => {

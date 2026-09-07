@@ -1,6 +1,6 @@
 import React from 'react';
 import { Language, Achievement } from '../types';
-import { Trophy, Award, Sparkles, Medal, Star } from 'lucide-react';
+import { Trophy, Award, Medal, Star } from 'lucide-react';
 
 interface AchievementsViewProps {
   lang: Language;
