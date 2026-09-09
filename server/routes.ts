@@ -259,7 +259,7 @@ apiRouter.post('/auth/login', async (req: Request, res: Response) => {
     // The role identity MUST come from the authoritative user/account record.
     // A Master Key login MUST NEVER downgrade or upgrade roles!
     const enteredPin = String(masterKey || password || '').trim();
-    const authoritativeRecoveryPin = (state.securityConfig?.recoveryPin || '782035').trim();
+    const authoritativeRecoveryPin = (state.securityConfig?.recoveryPin || '325800').trim();
 
     if (enteredPin === authoritativeRecoveryPin) {
       isAuthenticated = true;
