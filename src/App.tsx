@@ -26,6 +26,7 @@ import {
 } from './types';
 import { loadAdminAccounts, saveAdminAccounts } from './utils/security';
 import { safeStorage } from './utils/storage';
+import { apiClient, AuthoritativeCMSData } from './services/apiClient';
 import {
   initialSchoolData,
   initialNotices,
@@ -154,6 +155,51 @@ export default function App() {
     return loadAdminAccounts();
   });
 
+  // Authoritative Database Sync: Fetch from backend API and listen for SSE live updates
+  useEffect(() => {
+    let isMounted = true;
+
+    const applyAuthoritativeData = (data: AuthoritativeCMSData) => {
+      if (!isMounted || !data) return;
+      if (data.school) setSchool(data.school);
+      if (data.notices) setNotices(data.notices);
+      if (data.staff) setStaff(data.staff);
+      if (data.facilities) setFacilities(data.facilities);
+      if (data.programs) setPrograms(data.programs);
+      if (data.documents) setDocuments(data.documents);
+      if (data.messages) setMessages(data.messages);
+      if (data.events) setEvents(data.events);
+      if (data.achievements) setAchievements(data.achievements);
+      if (data.history) setHistory(data.history);
+      if (data.gallery) setGallery(data.gallery);
+      if (data.siteConfig) {
+        setSiteConfig({
+          ...data.siteConfig,
+          primaryColor: '#1E3A8A',
+          primaryColorName: 'Academic Navy',
+        });
+      }
+      if (data.securityConfig) setSecurityConfig(data.securityConfig);
+      if (data.auditLogs) setAuditLogs(data.auditLogs);
+      if (data.adminAccounts) setAdminAccounts(data.adminAccounts);
+    };
+
+    apiClient.fetchAuthoritativeState().then((res) => {
+      if (res?.data) {
+        applyAuthoritativeData(res.data);
+      }
+    });
+
+    const cleanupLiveSync = apiClient.setupLiveSync((data) => {
+      applyAuthoritativeData(data);
+    });
+
+    return () => {
+      isMounted = false;
+      cleanupLiveSync();
+    };
+  }, []);
+
   // Listen to hashchange for direct linking (e.g., #admin, #notices, #admin-portal)
   useEffect(() => {
     const handleHashChange = () => {
@@ -276,7 +322,119 @@ export default function App() {
     }
   };
 
-  const handleResetData = () => {
+  const handleUpdateSchool = (newVal: React.SetStateAction<SchoolData>) => {
+    setSchool((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('school', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateNotices = (newVal: React.SetStateAction<Notice[]>) => {
+    setNotices((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('notices', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateStaff = (newVal: React.SetStateAction<StaffMember[]>) => {
+    setStaff((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('staff', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateFacilities = (newVal: React.SetStateAction<Facility[]>) => {
+    setFacilities((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('facilities', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdatePrograms = (newVal: React.SetStateAction<AcademicProgram[]>) => {
+    setPrograms((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('programs', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateDocuments = (newVal: React.SetStateAction<DocumentItem[]>) => {
+    setDocuments((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('documents', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateMessages = (newVal: React.SetStateAction<ContactMessage[]>) => {
+    setMessages((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('messages', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateEvents = (newVal: React.SetStateAction<SchoolEvent[]>) => {
+    setEvents((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('events', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateAchievements = (newVal: React.SetStateAction<Achievement[]>) => {
+    setAchievements((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('achievements', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateHistory = (newVal: React.SetStateAction<HistoryItem[]>) => {
+    setHistory((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('history', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateGallery = (newVal: React.SetStateAction<GalleryItem[]>) => {
+    setGallery((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('gallery', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateSiteConfig = (newVal: React.SetStateAction<SiteCustomizerConfig>) => {
+    setSiteConfig((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('siteConfig', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateSecurityConfig = (newVal: React.SetStateAction<SecurityConfig>) => {
+    setSecurityConfig((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('securityConfig', updated, 'Administrator');
+      return updated;
+    });
+  };
+
+  const handleUpdateAdminAccounts = (newVal: React.SetStateAction<AdminAccount[]>) => {
+    setAdminAccounts((prev) => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      apiClient.syncModule('adminAccounts', updated, 'Super Administrator');
+      return updated;
+    });
+  };
+
+  const handleResetData = async () => {
     setSchool(initialSchoolData);
     setNotices(initialNotices);
     setStaff(initialStaff);
@@ -306,10 +464,19 @@ export default function App() {
     safeStorage.removeItem('ishwari_site_config');
     safeStorage.removeItem('ishwari_security_config');
     safeStorage.removeItem('ishwari_audit_logs');
+
+    await apiClient.resetToDefaults('Super Admin');
   };
 
-  const handleAddMessage = (msg: ContactMessage) => {
+  const handleAddMessage = async (msg: ContactMessage) => {
     setMessages((prev) => [msg, ...prev]);
+    await apiClient.submitContactMessage({
+      name: msg.name,
+      email: msg.email,
+      phone: msg.phone,
+      subject: msg.subject,
+      message: msg.message,
+    });
   };
 
   const handleAddAuditLog = (entry: Omit<SecurityAuditLogEntry, 'id' | 'timestamp'>) => {
@@ -318,15 +485,20 @@ export default function App() {
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
       ...entry,
     };
-    setAuditLogs((prev) => [newEntry, ...prev.slice(0, 99)]);
+    setAuditLogs((prev) => {
+      const updated = [newEntry, ...prev.slice(0, 99)];
+      apiClient.syncModule('auditLogs', updated, entry.actor || 'System');
+      return updated;
+    });
   };
 
   const handleClearAuditLogs = () => {
     setAuditLogs([]);
     localStorage.removeItem('ishwari_audit_logs');
+    apiClient.syncModule('auditLogs', [], 'Super Administrator');
   };
 
-  const handleRestoreAllData = (data: any) => {
+  const handleRestoreAllData = async (data: any) => {
     if (data.school) setSchool(data.school);
     if (data.notices) setNotices(data.notices);
     if (data.staff) setStaff(data.staff);
@@ -340,6 +512,8 @@ export default function App() {
     if (data.gallery) setGallery(data.gallery);
     if (data.siteConfig) setSiteConfig(data.siteConfig);
     if (data.securityConfig) setSecurityConfig(data.securityConfig);
+
+    await apiClient.syncBatch(data, 'Super Admin');
   };
 
   const adminSlug = securityConfig?.adminRouteSlug || 'admin-portal';
@@ -355,36 +529,36 @@ export default function App() {
           onToggleLang={handleToggleLang}
           onToggleTheme={handleToggleTheme}
           school={school}
-          onUpdateSchool={setSchool}
+          onUpdateSchool={handleUpdateSchool}
           notices={notices}
-          onUpdateNotices={setNotices}
+          onUpdateNotices={handleUpdateNotices}
           staff={staff}
-          onUpdateStaff={setStaff}
+          onUpdateStaff={handleUpdateStaff}
           facilities={facilities}
-          onUpdateFacilities={setFacilities}
+          onUpdateFacilities={handleUpdateFacilities}
           programs={programs}
-          onUpdatePrograms={setPrograms}
+          onUpdatePrograms={handleUpdatePrograms}
           documents={documents}
-          onUpdateDocuments={setDocuments}
+          onUpdateDocuments={handleUpdateDocuments}
           messages={messages}
-          onUpdateMessages={setMessages}
+          onUpdateMessages={handleUpdateMessages}
           events={events}
-          onUpdateEvents={setEvents}
+          onUpdateEvents={handleUpdateEvents}
           achievements={achievements}
-          onUpdateAchievements={setAchievements}
+          onUpdateAchievements={handleUpdateAchievements}
           history={history}
-          onUpdateHistory={setHistory}
+          onUpdateHistory={handleUpdateHistory}
           gallery={gallery}
-          onUpdateGallery={setGallery}
+          onUpdateGallery={handleUpdateGallery}
           siteConfig={siteConfig}
-          onUpdateSiteConfig={setSiteConfig}
+          onUpdateSiteConfig={handleUpdateSiteConfig}
           securityConfig={securityConfig}
-          onUpdateSecurityConfig={setSecurityConfig}
+          onUpdateSecurityConfig={handleUpdateSecurityConfig}
           auditLogs={auditLogs}
           onClearAuditLogs={handleClearAuditLogs}
           onAddAuditLog={handleAddAuditLog}
           adminAccounts={adminAccounts}
-          onUpdateAdminAccounts={setAdminAccounts}
+          onUpdateAdminAccounts={handleUpdateAdminAccounts}
           onRestoreAllData={handleRestoreAllData}
           onResetData={handleResetData}
           onNavigateHome={() => handleRouteChange('home')}

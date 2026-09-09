@@ -55,6 +55,30 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const visibility = config?.sectionVisibility || initialSiteConfig.sectionVisibility;
   const stats = config?.stats || initialSiteConfig.stats;
 
+  // Dynamic Homepage Background Image
+  const isBgExplicitlyDisabled =
+    config?.hero_background_enabled === false ||
+    config?.heroBackgroundEnabled === false ||
+    config?.homeBgEnabled === false;
+
+  const rawBgUrl =
+    config?.hero_background_image ||
+    config?.heroBackgroundImage ||
+    config?.homeBgImage ||
+    (school.home_bg_enabled !== false && school.home_bg_image ? school.home_bg_image : '');
+
+  const homeBgUrl = !isBgExplicitlyDisabled && rawBgUrl ? rawBgUrl : '';
+  const rawOverlay =
+    config?.homeBgOverlayOpacity ??
+    (config as any)?.hero_background_overlay ??
+    (config as any)?.heroBackgroundOverlay ??
+    85;
+  const overlayOpacity = Math.min(Math.max(Number(rawOverlay) / 100, 0.0), 0.98);
+
+  const heroBgAlt = isNp
+    ? (config?.hero_background_alt_np || config?.heroBackgroundAltNp || 'ईश्वरी माध्यमिक विद्यालय क्याम्पस पृष्ठभूमि')
+    : (config?.hero_background_alt_en || config?.heroBackgroundAltEn || 'Ishwari Secondary School Campus Hero Background');
+
   const pinnedNotices = notices.filter(n => n.pinned);
 
   const handleDownloadNotice = (notice: Notice) => {
@@ -188,21 +212,30 @@ Website: Official Institutional Web Portal
       {/* 1. HERO INSTITUTIONAL BANNER */}
       {(visibility.hero ?? true) && (
         <section className="relative bg-slate-900 text-white py-16 sm:py-24 border-b border-slate-800 overflow-hidden">
-          {/* Subtle geometric pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30 pointer-events-none" />
+          {/* Dynamic Background Image or Geometric Grid */}
+          {homeBgUrl ? (
+            <>
+              <div
+                role="img"
+                aria-label={heroBgAlt}
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700"
+                style={{ backgroundImage: `url(${homeBgUrl})` }}
+              />
+              <div
+                className="absolute inset-0 bg-slate-950 transition-opacity duration-300"
+                style={{ opacity: overlayOpacity }}
+              />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30 pointer-events-none" />
+          )}
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
-            <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 shadow-xs">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/9/9b/Flag_of_Nepal.gif"
-                alt="National Flag of Nepal"
-                className="h-6 w-auto object-contain shrink-0 drop-shadow-xs"
-                loading="lazy"
-              />
-              <span className="text-xs font-semibold text-slate-200 tracking-wide font-mono">
-                {t(`Estd. ${school.estd_bs} B.S. (${school.estd_ad} A.D.)`, `स्थापना: वि.सं. ${school.estd_bs}`)}
-              </span>
-            </div>
+            {config.heroBadgeEn && (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 shadow-xs text-blue-300 text-xs font-bold tracking-wider uppercase backdrop-blur-xs">
+                <span>{t(config.heroBadgeEn, config.heroBadgeNp)}</span>
+              </div>
+            )}
 
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white max-w-3xl leading-tight">
               {t(config.heroTitleEn || initialSiteConfig.heroTitleEn, config.heroTitleNp || initialSiteConfig.heroTitleNp)}
@@ -369,18 +402,37 @@ Website: Official Institutional Web Portal
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="p-8 sm:p-10 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-4 text-center space-y-3">
-              <div className="w-24 h-24 mx-auto rounded-2xl bg-blue-50 dark:bg-slate-800 border-2 border-[#1E40AF] text-[#1E40AF] dark:text-blue-400 flex items-center justify-center text-4xl shadow-sm">
-                <GraduationCap className="w-12 h-12" />
-              </div>
+              {school.principal_image ? (
+                <div className="relative w-28 h-28 mx-auto">
+                  <img
+                    src={school.principal_image}
+                    alt={school.principal_name_en}
+                    className="w-28 h-28 mx-auto rounded-2xl object-cover border-2 border-[#1E40AF] shadow-md transition-transform duration-300 hover:scale-105"
+                  />
+                  <div className="absolute -bottom-2 -right-2 p-1.5 rounded-full bg-[#1E40AF] text-white shadow-xs">
+                    <GraduationCap className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              ) : (
+                <div className="w-24 h-24 mx-auto rounded-2xl bg-blue-50 dark:bg-slate-800 border-2 border-[#1E40AF] text-[#1E40AF] dark:text-blue-400 flex flex-col items-center justify-center shadow-sm">
+                  <GraduationCap className="w-10 h-10 mb-0.5" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    {t('Principal', 'प्र.अ.')}
+                  </span>
+                </div>
+              )}
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   {t(school.principal_name_en, school.principal_name_np)}
                 </h3>
                 <p className="text-xs font-semibold text-[#1E40AF] dark:text-blue-400">
-                  {t('Headmaster / Principal (M.Ed, M.A.)', 'प्रधानाध्यापक')}
+                  {t(school.principal_designation_en || 'Headmaster / Principal (M.Ed, M.A.)', school.principal_designation_np || 'प्रधानाध्यापक')}
                 </p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                   {t(school.name_en, school.name_np)}
+                </p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                  {t(school.address_en, school.address_np)}
                 </p>
               </div>
             </div>
@@ -449,3 +501,4 @@ Website: Official Institutional Web Portal
     </div>
   );
 };
+

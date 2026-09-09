@@ -32,12 +32,12 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, school, onNavigate }
             <span>{t('Institutional Profile & Heritage', 'विद्यालयको चिनारी तथा ऐतिहासिक पृष्ठभूमि')}</span>
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-            {t('About Ishwari Secondary School', 'ईश्वरी माध्यमिक विद्यालयको बारेमा')}
+            {t('About Shree Ishwari Secondary School', 'श्री ईश्वरी माध्यमिक विद्यालयको बारेमा')}
           </h1>
           <p className="text-sm text-slate-500 mt-2 max-w-3xl leading-relaxed">
             {t(
-              'A landmark community institution dedicated to democratic, inclusive, and scientific secondary education since 2035 B.S.',
-              'वि.सं. २०३५ मा स्थापित यस विद्यालयले गुणस्तरीय, प्रविधिमैत्री र नैतिक शिक्षा प्रदान गर्दै आइरहेको छ।'
+              'A landmark community institution dedicated to democratic, inclusive, and scientific secondary education since 2028 B.S.',
+              'वि.सं. २०२८ मा स्थापित यस विद्यालयले गुणस्तरीय, प्रविधिमैत्री र नैतिक शिक्षा प्रदान गर्दै आइरहेको छ।'
             )}
           </p>
         </div>

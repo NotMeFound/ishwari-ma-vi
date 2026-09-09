@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Language, AdminAccount, PermissionKey, SecurityAuditLogEntry } from '../../types';
+import { Language, AdminAccount, PermissionKey, SecurityAuditLogEntry, AdminRole } from '../../types';
 import { ALL_PERMISSIONS } from '../../utils/security';
 import { ConfirmationModal, ConfirmationVariant } from '../../components/ConfirmationModal';
 import {
@@ -77,7 +77,7 @@ export const RbacAdminTab: React.FC<RbacAdminTabProps> = ({
     username: string;
     fullName: string;
     email: string;
-    role: 'super_admin' | 'admin';
+    role: AdminRole;
     password: string;
     status: 'active' | 'suspended' | 'inactive';
     permissions: PermissionKey[];

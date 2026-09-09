@@ -11,14 +11,33 @@ export interface SchoolData {
   code: string;
   estd_bs: string;
   estd_ad: string;
+  estd?: string;
+  school_code?: string;
+  timing_en?: string;
+  timing_np?: string;
+  emergency_contact?: string;
   phone: string;
   email: string;
   address_en: string;
   address_np: string;
+  location_en?: string;
+  location_np?: string;
   principal_name_en: string;
   principal_name_np: string;
+  principal_designation_en?: string;
+  principal_designation_np?: string;
   principal_message_en: string;
   principal_message_np: string;
+  principal_image?: string;
+  chairman_name_en?: string;
+  chairman_name_np?: string;
+  chairman_designation_en?: string;
+  chairman_designation_np?: string;
+  chairman_message_en?: string;
+  chairman_message_np?: string;
+  chairman_image?: string;
+  home_bg_image?: string;
+  home_bg_enabled?: boolean;
   logo_url?: string;
 }
 
@@ -41,7 +60,7 @@ export interface StaffMember {
   id: number;
   name_en: string;
   name_np: string;
-  role: 'principal' | 'teacher' | 'admin' | 'support';
+  role: 'principal' | 'teacher' | 'admin' | 'support' | 'smc_chair' | 'smc_member';
   designation_en: string;
   designation_np: string;
   experience: string;
@@ -60,6 +79,13 @@ export interface Facility {
   desc_en: string;
   desc_np: string;
   icon: string;
+  category?: 'science' | 'ict' | 'library' | 'sports' | 'amenity' | 'general' | string;
+  order?: number;
+  published?: boolean;
+  backgroundImage?: string;
+  backgroundImageEnabled?: boolean;
+  backgroundImageAltEn?: string;
+  backgroundImageAltNp?: string;
 }
 
 export interface SchoolEvent {
@@ -99,6 +125,19 @@ export interface DocumentItem {
   type: string;
   size: string;
   date: string;
+  description_en?: string;
+  description_np?: string;
+  original_filename?: string;
+  stored_filename?: string;
+  file_path?: string;
+  url?: string;
+  mime_type?: string;
+  file_size?: number;
+  status?: 'draft' | 'published';
+  is_published?: boolean;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AcademicProgram {
@@ -122,6 +161,8 @@ export interface ContactMessage {
   message: string;
   date: string;
   status: 'new' | 'reviewed' | 'resolved';
+  replyNotes?: string;
+  repliedAt?: string;
 }
 
 export interface GalleryItem {
@@ -134,7 +175,7 @@ export interface GalleryItem {
   date?: string;
 }
 
-export type AdminRole = 'super_admin' | 'admin';
+export type AdminRole = 'super_admin' | 'admin' | 'editor' | 'viewer';
 
 export type PermissionKey =
   | 'notice.view'
@@ -161,6 +202,7 @@ export type PermissionKey =
   | 'facility.create'
   | 'facility.update'
   | 'facility.delete'
+  | 'facility.publish'
   | 'event.view'
   | 'event.create'
   | 'event.update'
@@ -174,6 +216,7 @@ export type PermissionKey =
   | 'document.update'
   | 'document.delete'
   | 'message.view'
+  | 'message.update'
   | 'message.delete'
   | 'school.view'
   | 'school.update'
@@ -183,6 +226,10 @@ export type PermissionKey =
   | 'admin.create'
   | 'admin.update'
   | 'admin.delete'
+  | 'role.view'
+  | 'role.update'
+  | 'audit.view'
+  | 'audit.delete'
   | 'security.view'
   | 'security.update'
   | 'backup.create'
@@ -216,6 +263,17 @@ export interface SiteCustomizerConfig {
   heroTitleNp: string;
   heroSubtitleEn: string;
   heroSubtitleNp: string;
+  homeBgImage?: string;
+  homeBgEnabled?: boolean;
+  homeBgOverlayOpacity?: number; // 0 to 100
+  hero_background_image?: string;
+  hero_background_enabled?: boolean;
+  hero_background_alt_en?: string;
+  hero_background_alt_np?: string;
+  heroBackgroundImage?: string;
+  heroBackgroundEnabled?: boolean;
+  heroBackgroundAltEn?: string;
+  heroBackgroundAltNp?: string;
   stats: {
     students: string;
     studentsLabelEn: string;
@@ -245,7 +303,13 @@ export interface SiteCustomizerConfig {
     community: boolean;
     contact: boolean;
   };
+  footerDescEn?: string;
+  footerDescNp?: string;
+  copyrightTextEn?: string;
+  copyrightTextNp?: string;
 }
+
+export type SiteConfig = SiteCustomizerConfig;
 
 export interface SecurityConfig {
   adminUsername: string;
@@ -257,6 +321,20 @@ export interface SecurityConfig {
   sessionTimeoutMinutes: number;
   adminRouteSlug: string; // default 'admin-portal'
   hideAdminLinkInHeader: boolean;
+  maxFailedAttempts?: number;
+  forcePasswordChangePeriodDays?: number;
+  maintenanceMode?: boolean;
+  allowedIPs?: string[];
+}
+
+export interface ActiveSessionLock {
+  sessionId: string;
+  userId: string;
+  username: string;
+  role: AdminRole;
+  fullName: string;
+  loginTimestamp: number;
+  lastHeartbeat: number;
 }
 
 export interface SecurityAuditLogEntry {
@@ -266,10 +344,10 @@ export interface SecurityAuditLogEntry {
   actor: string;
   role?: string;
   module?: string;
-  result?: 'success' | 'failed';
+  result?: 'success' | 'failed' | 'denied';
   ipAddress?: string;
-  status: 'success' | 'warning' | 'danger';
-  severity?: 'success' | 'warning' | 'danger';
+  status: 'success' | 'warning' | 'danger' | 'failed' | 'denied';
+  severity?: 'success' | 'warning' | 'danger' | 'info';
   details: string;
 }
 

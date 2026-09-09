@@ -66,3 +66,4 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({ lang, achiev
     </div>
   );
 };
+

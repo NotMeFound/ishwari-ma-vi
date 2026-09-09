@@ -84,8 +84,8 @@ const foundingPillars = [
   {
     title_en: "Community Land Donors",
     title_np: "जग्गादाता तथा समाजसेवीहरू",
-    desc_en: "Generous local village families who gifted 18 Ropanis of fertile community land in 2035 B.S. to ensure education for all children.",
-    desc_np: "वि.सं. २०३५ मा आफ्ना बालबालिकाको उज्ज्वल भविष्यका लागि १८ रोपनी बहुमूल्य जग्गा निःशुल्क दान गर्ने स्थानीय महानुभावहरू।"
+    desc_en: "Generous local village families who gifted 18 Ropanis of fertile community land in 2028 B.S. to ensure education for all children.",
+    desc_np: "वि.सं. २०२८ मा आफ्ना बालबालिकाको उज्ज्वल भविष्यका लागि १८ रोपनी बहुमूल्य जग्गा निःशुल्क दान गर्ने स्थानीय महानुभावहरू।"
   },
   {
     title_en: "Voluntary Laborers (Shramadan)",
@@ -124,30 +124,30 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, history }) => {
         <div className="relative rounded-3xl overflow-hidden bg-linear-to-br from-[#0B1528] via-[#1E3A8A] to-[#172554] text-white p-8 sm:p-12 border border-blue-900/40 shadow-xl">
           {/* Subtle watermark background crest */}
           <div className="absolute -right-8 -bottom-10 opacity-10 text-[180px] font-serif font-black select-none pointer-events-none">
-            २०३५
+            २०२८
           </div>
 
           <div className="max-w-3xl relative z-10 space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-mono font-bold tracking-wide border border-amber-400/30">
               <Calendar className="w-3.5 h-3.5 text-amber-400" />
-              <span>{t('Established 2035 B.S. (1978 A.D.)', 'स्थापना: वि.सं. २०३५ (सन् १९७८)')}</span>
+              <span>{t('Established 2028 B.S. (1971 A.D.)', 'स्थापना: वि.सं. २०२८ (सन् १९७१)')}</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-              {t('Four Decades of Educational Heritage', 'गौरवमय चार दशकको ऐतिहासिक यात्रा')}
+              {t('Over Five Decades of Educational Heritage', 'गौरवमय पाँच दशकको ऐतिहासिक यात्रा')}
             </h1>
 
             <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed">
               {t(
-                'From a modest community-funded hut with thatch roofing in 2035 B.S. to one of the nation’s highest-ranked Government Model Secondary Schools, Ishwari Secondary School has illuminated thousands of lives with knowledge, virtue, and resilience.',
-                'वि.सं. २०३५ मा समुदायको अगाध निष्ठा र श्रमदानबाट स्थापित सानो प्राथमिक पाठशालादेखि आजको अत्याधुनिक, प्रविधिमैत्री नमुना माध्यमिक विद्यालयसम्मको संघर्ष, समर्पण र सफलताको अविस्मरणीय इतिहास।'
+                'From a modest community-funded hut with thatch roofing in 2028 B.S. to a premier secondary institution, Shree Ishwari Secondary School has illuminated thousands of lives with knowledge, virtue, and resilience.',
+                'वि.सं. २०२८ मा समुदायको अगाध निष्ठा र श्रमदानबाट स्थापित सानो प्राथमिक पाठशालादेखि आजको अत्याधुनिक, प्रविधिमैत्री माध्यमिक विद्यालयसम्मको संघर्ष, समर्पण र सफलताको अविस्मरणीय इतिहास।'
               )}
             </p>
 
             {/* Heritage Stats Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-blue-800/60 text-xs">
               <div>
-                <span className="block text-xl sm:text-2xl font-black text-amber-300 font-mono">४८+ वर्ष</span>
+                <span className="block text-xl sm:text-2xl font-black text-amber-300 font-mono">५५+ वर्ष</span>
                 <span className="text-blue-200">{t('Years of Service', 'निरन्तर सेवा')}</span>
               </div>
               <div>
@@ -159,8 +159,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, history }) => {
                 <span className="text-blue-200">{t('SEE Success Track', 'एसईई निरन्तर सफलता')}</span>
               </div>
               <div>
-                <span className="block text-xl sm:text-2xl font-black text-amber-300 font-mono">नमुना</span>
-                <span className="text-blue-200">{t('Govt Model Status', 'नेपाल सरकार नमुना मावि')}</span>
+                <span className="block text-xl sm:text-2xl font-black text-amber-300 font-mono">उत्कृष्ट</span>
+                <span className="text-blue-200">{t('Academic Excellence', 'उत्कृष्ट शैक्षिक उपलब्धि')}</span>
               </div>
             </div>
           </div>
@@ -175,7 +175,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, history }) => {
                 <span>{t('Chronicle of Milestones', 'ऐतिहासिक कालखण्डहरू')}</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-                {t('From Inception to Modern Excellence', 'स्थापनादेखि नमुना विद्यालयसम्म')}
+                {t('From Inception to Modern Excellence', 'स्थापनादेखि शैक्षिक अग्रतासम्म')}
               </h2>
             </div>
 
@@ -183,7 +183,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, history }) => {
             <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 self-start">
               {[
                 { id: 'all', en: 'All Eras', np: 'सबै कालखण्ड' },
-                { id: 'foundation', en: '2035–2045', np: '२०३५–२०४५' },
+                { id: 'foundation', en: '2028–2045', np: '२०२८–२०४५' },
                 { id: 'expansion', en: '2046–2065', np: '२०४६–२०६५' },
                 { id: 'modern', en: '2066–Present', np: '२०६६–हालसम्म' }
               ].map(tab => (

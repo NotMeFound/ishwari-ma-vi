@@ -10,7 +10,11 @@ import {
   Bell,
   BarChart3,
   Layers,
-  Layout
+  Layout,
+  Image as ImageIcon,
+  Upload,
+  Trash2,
+  Check
 } from 'lucide-react';
 import { ConfirmationModal, ConfirmationVariant } from '../../components/ConfirmationModal';
 
@@ -237,6 +241,154 @@ export const SiteCustomizerTab: React.FC<SiteCustomizerTabProps> = ({
               onChange={(e) => setForm(prev => ({ ...prev, heroSubtitleNp: e.target.value }))}
               className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
             />
+          </div>
+        </div>
+      </div>
+
+      {/* HOMEPAGE BACKGROUND IMAGE CONTROLLER */}
+      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 shadow-xs">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3.5">
+          <div className="flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-[#1E40AF]" />
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                {t('Homepage Background Image', 'गृहपृष्ठ पृष्ठभूमिको तस्वीर')}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {t('Upload, replace, preview, or toggle the institutional backdrop across the homepage.', 'गृहपृष्ठको पृष्ठभूमिमा देखिने तस्बिर नियन्त्रण गर्नुहोस्।')}
+              </p>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+              {form.homeBgEnabled !== false ? t('Enabled', 'सक्रिय') : t('Disabled', 'निष्क्रिय')}
+            </span>
+            <input
+              type="checkbox"
+              checked={form.homeBgEnabled !== false}
+              onChange={(e) => setForm(prev => ({ ...prev, homeBgEnabled: e.target.checked }))}
+              className="w-4 h-4 text-[#1E40AF] rounded border-slate-300 dark:border-slate-700 focus:ring-[#1E40AF]"
+            />
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          {/* Preview Box */}
+          <div className="md:col-span-6 space-y-2">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              {t('Live Backdrop Preview', 'पृष्ठभूमि पूर्वावलोकन')}
+            </label>
+            <div className="relative h-44 rounded-xl border border-slate-300 dark:border-slate-700 overflow-hidden bg-slate-900 flex items-center justify-center text-center p-4">
+              {form.homeBgImage ? (
+                <>
+                  <div
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                    style={{ backgroundImage: `url(${form.homeBgImage})` }}
+                  />
+                  <div
+                    className="absolute inset-0 bg-slate-950 transition-opacity"
+                    style={{ opacity: ((form.homeBgOverlayOpacity ?? 85) / 100) }}
+                  />
+                  <div className="relative z-10 text-white space-y-1">
+                    <span className="inline-block px-2.5 py-0.5 rounded bg-blue-600/80 text-[10px] font-bold tracking-wider uppercase">
+                      {t('Active Background', 'सक्रिय पृष्ठभूमि')}
+                    </span>
+                    <p className="text-xs font-bold">{form.heroTitleEn || 'Institutional Headline'}</p>
+                    <p className="text-[10px] text-slate-300 font-mono">
+                      {form.homeBgEnabled !== false ? t('Displayed on Home Page', 'गृहपृष्ठमा सक्रिय') : t('Currently Disabled (Default will show)', 'हाल निष्क्रिय')}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-1.5 text-slate-400">
+                  <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-40 pointer-events-none" />
+                  <ImageIcon className="w-8 h-8 mx-auto text-slate-500" />
+                  <p className="text-xs font-semibold">{t('Default Institutional Geometric Backdrop', 'डिफल्ट संस्थागत पृष्ठभूमि सक्रिय छ')}</p>
+                  <p className="text-[10px] text-slate-500">{t('No custom background uploaded. Upload below to customize.', 'नयाँ फोटो राख्न तलबाट अपलोड गर्नुहोस्।')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Controls & Actions */}
+          <div className="md:col-span-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                {t('Upload / Replace Image', 'नयाँ तस्बिर अपलोड / परिवर्तन')}
+              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1E40AF] hover:bg-[#1D4ED8] text-white text-xs font-bold cursor-pointer transition shadow-xs">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{form.homeBgImage ? t('Replace Background', 'फोटो परिवर्तन गर्नुहोस्') : t('Upload Background Image', 'पृष्ठभूमि अपलोड गर्नुहोस्')}</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/jpg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 2 * 1024 * 1024) {
+                        onShowToast(t('Image size exceeds 2 MB limit!', 'तस्वीरको आकार २ MB भन्दा कम हुनुपर्छ!'));
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const base64 = event.target?.result as string;
+                        setForm(prev => ({
+                          ...prev,
+                          homeBgImage: base64,
+                          homeBgEnabled: true,
+                        }));
+                        onShowToast(t('Background image loaded! Click Save to apply.', 'पृष्ठभूमि लोड भयो! सुरक्षित गर्न सेभ थिच्नुहोस्।'));
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+
+                {form.homeBgImage && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm(prev => ({ ...prev, homeBgImage: '' }));
+                      onShowToast(t('Custom background removed. Reverted to default.', 'पृष्ठभूमि हटाइयो र डिफल्टमा फर्काइयो।'));
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-xs font-semibold cursor-pointer transition"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{t('Remove Image', 'तस्बिर हटाउनुहोस्')}</span>
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500">
+                {t('Supported formats: JPG, PNG, WebP (Max size: 2 MB). Landscape orientation recommended.', 'स्वीकृत ढाँचा: JPG, PNG, WebP (अधिकतम २ MB)।')}
+              </p>
+            </div>
+
+            {/* Dark Overlay Opacity Slider */}
+            <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {t('Text Legibility Dark Overlay', 'अक्षर पढ्न सहज बनाउने गाढा लेयर')}
+                </span>
+                <span className="font-mono font-bold text-[#1E40AF] dark:text-blue-400">
+                  {form.homeBgOverlayOpacity ?? 85}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="30"
+                max="95"
+                step="5"
+                value={form.homeBgOverlayOpacity ?? 85}
+                onChange={(e) => setForm(prev => ({ ...prev, homeBgOverlayOpacity: Number(e.target.value) }))}
+                className="w-full accent-[#1E40AF]"
+              />
+              <p className="text-[10px] text-slate-500">
+                {t('Ensures text and white headlines remain 100% readable and accessible (WCAG AA) over any photograph.', 'कुनै पनि तस्बिरमा सेतो अक्षर स्पष्ट देखिनका लागि उपयुक्त कन्ट्रास्ट मिलाउनुहोस्।')}
+              </p>
+            </div>
           </div>
         </div>
       </div>

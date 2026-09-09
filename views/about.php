@@ -13,7 +13,7 @@ $school = $app->getData()['school'];
         <!-- Header -->
         <div class="border-b border-slate-200 dark:border-slate-800 pb-6">
             <span class="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400"><?= $app->t('Institutional Heritage', 'संस्थागत परिचय') ?></span>
-            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white mt-1"><?= $app->t('About Shree Ishwari Secondary School', 'श्री ईश्वरी माध्यमिक विद्यालयको परिचय') ?></h1>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white mt-1"><?= $app->t('About Ishwari Secondary School', 'ईश्वरी माध्यमिक विद्यालयको परिचय') ?></h1>
             <p class="text-sm text-slate-500 mt-2 max-w-3xl leading-relaxed">
                 <?= $app->t('A center of educational prestige, committed to delivering holistic academic development, scientific curiosity, and ethical public values.', 'शैक्षिक गरिमाको धरोहर, समग्र शैक्षिक विकास, वैज्ञानिक सोच र नैतिक मूल्य मान्यतामा समर्पित अग्रणी संस्था।') ?>
             </p>

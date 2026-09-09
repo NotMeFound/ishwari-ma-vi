@@ -71,7 +71,7 @@ $navItems = [
         <?php endforeach; ?>
         <div class="pt-2 border-t border-slate-800">
             <a href="/admin.php" class="block px-3 py-2 rounded text-sm font-semibold text-amber-400 hover:bg-slate-800">
-                🔒 <?= $app->t('Admin Portal', 'प्रशासनिक पोर्टल') ?>
+                🔒 <?= $app->t('Admin Management Portal', 'प्रशासनिक व्यवस्थापन पोर्टल') ?>
             </a>
         </div>
     </div>

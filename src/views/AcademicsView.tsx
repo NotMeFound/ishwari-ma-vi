@@ -127,3 +127,4 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({ lang, programs = i
     </div>
   );
 };
+

@@ -36,8 +36,8 @@ export const Footer: React.FC<FooterProps> = ({ lang, school, onRouteChange }) =
             </div>
             <p className="text-slate-400 text-xs leading-relaxed">
               {t(
-                'Committed to excellence, integrity, and social responsibility in public secondary education since 2035 B.S.',
-                'वि.सं. २०३५ देखि गुणस्तरीय, प्रविधिमैत्री र नैतिक शिक्षा प्रदान गर्दै आइरहेको अग्रणी नमुना सामुदायिक विद्यालय।'
+                'Committed to excellence, integrity, and social responsibility in public secondary education since 2028 B.S.',
+                'वि.सं. २०२८ देखि गुणस्तरीय, प्रविधिमैत्री र नैतिक शिक्षा प्रदान गर्दै आइरहेको अग्रणी सामुदायिक विद्यालय।'
               )}
             </p>
           </div>

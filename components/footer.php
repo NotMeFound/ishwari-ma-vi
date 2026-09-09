@@ -20,7 +20,20 @@ $school = $app->getData()['school'];
                 <p class="text-xs text-slate-400 leading-relaxed">
                     <?= $app->e($app->t($school['affiliation_en'], $school['affiliation_np'])) ?>
                 </p>
- 
+                <div class="text-xs text-slate-500 font-mono">
+                    <span><?= $app->e($school['code']) ?></span> • 
+                    <span><?= $app->t('Estd: ' . $school['estd_ad'], 'स्थापना: ' . $school['estd_bs']) ?></span>
+                </div>
+                <div class="pt-2">
+                    <a href="/ishwari-ma-vi-final.zip" download class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span><?= $app->t('Download Full School Source (.ZIP)', 'पूर्ण वेबसाइट स्रोत डाउनलोड (.ZIP)') ?></span>
+                    </a>
+                </div>
+            </div>
+
             <!-- Col 2: Academic Programs -->
             <div class="space-y-2.5">
                 <h4 class="text-white font-semibold text-xs uppercase tracking-wider"><?= $app->t('Academic Streams', 'शैक्षिक तहहरू') ?></h4>
@@ -74,7 +87,11 @@ $school = $app->getData()['school'];
 
         <div class="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
             <p>© <?= date('Y') ?> <?= $app->e($app->t($school['name_en'], $school['name_np'])) ?>. <?= $app->t('All Rights Reserved. Official Government Portal.', 'सबै अधिकार सुरक्षित। नेपाल सरकारको आधिकारिक पोर्टल।') ?></p>
-
+            <div class="flex items-center gap-4">
+                <a href="/admin.php" class="text-slate-400 hover:text-amber-400 transition">Admin Portal</a>
+                <span>•</span>
+                <span>Government Model School</span>
+            </div>
         </div>
     </div>
 </footer>

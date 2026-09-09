@@ -30,6 +30,7 @@ import {
   forceClearSessionLock
 } from '../utils/security';
 import { safeSessionStorage } from '../utils/storage';
+import { apiClient } from '../services/apiClient';
 import {
   Lock,
   Unlock,
@@ -79,6 +80,44 @@ import { BackupRestoreTab } from './admin/BackupRestoreTab';
 import { SuperAdminControlCenter } from './admin/SuperAdminControlCenter';
 import { RbacAdminTab } from './admin/RbacAdminTab';
 import { StaffAdminTab } from './admin/StaffAdminTab';
+import { AdminSidebar, AdminNavTabId } from './admin/AdminSidebar';
+import { AdminHeader } from './admin/AdminHeader';
+import { AdminDashboardTab } from './admin/AdminDashboardTab';
+import { AdminWebsiteTab } from './admin/AdminWebsiteTab';
+import { AdminGovernanceTab } from './admin/AdminGovernanceTab';
+import { AdminContentTab } from './admin/AdminContentTab';
+import { AdminCommunicationTab } from './admin/AdminCommunicationTab';
+import { AdministratorsAdminTab } from './admin/AdministratorsAdminTab';
+import { AdminDocumentsManager } from '../components/admin/AdminDocumentsManager';
+import { RolesPermissionsTab } from './admin/RolesPermissionsTab';
+import { SiteSettingsTab } from './admin/SiteSettingsTab';
+import { AuditLogsTab } from './admin/AuditLogsTab';
+import { AdminProfileTab } from './admin/AdminProfileTab';
+
+const UnauthorizedPage: React.FC<{ onNavigateDashboard: () => void; lang: Language }> = ({ onNavigateDashboard, lang }) => (
+  <div className="p-12 text-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-2xs max-w-lg mx-auto my-12">
+    <div className="w-16 h-16 rounded-2xl bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto shadow-xs">
+      <ShieldAlert className="w-8 h-8" />
+    </div>
+    <div>
+      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+        {lang === 'np' ? 'पहुँच अस्वीकृत (Access Denied)' : 'Access Denied / 403 Forbidden'}
+      </h3>
+      <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+        {lang === 'np'
+          ? 'तपाईंको सुरक्षा भूमिकामा यो मोड्युल हेर्ने वा सम्पादन गर्ने अधिकार तोकिएको छैन।'
+          : 'Your administrative account does not possess the requisite capabilities to access this module.'}
+      </p>
+    </div>
+    <button
+      type="button"
+      onClick={onNavigateDashboard}
+      className="px-5 py-2.5 rounded-lg bg-[#1E40AF] text-white text-xs font-bold shadow-xs hover:bg-blue-700 transition"
+    >
+      {lang === 'np' ? 'ड्यासबोर्डमा फर्कनुहोस्' : 'Return to Dashboard'}
+    </button>
+  </div>
+);
 
 interface AdminViewProps {
   lang: Language;
@@ -183,29 +222,15 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [activeTab, setActiveTab] = useState<
-    | 'super_admin_control'
-    | 'rbac_admin'
-    | 'customizer'
-    | 'profile'
-    | 'principal'
-    | 'notices'
-    | 'staff'
-    | 'academics'
-    | 'facilities'
-    | 'events_extra'
-    | 'gallery'
-    | 'documents'
-    | 'messages'
-    | 'security'
-    | 'system'
-    | 'php_export'
-  >('super_admin_control');
+  const [activeTab, setActiveTab] = useState<AdminNavTabId | string>('dashboard');
   const [toastMessage, setToastMessage] = useState('');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const can = (perm: PermissionKey): boolean => {
     return hasPermission(currentAccount, perm);
   };
+
+  const isSuperAdmin = currentAccount?.role === 'super_admin';
 
   // Security Lockout & Failed Attempts State
   const [failedAttempts, setFailedAttempts] = useState<number>(() => {
@@ -414,81 +439,40 @@ export const AdminView: React.FC<AdminViewProps> = ({
     const trimmedUser = username.trim().toLowerCase();
     const trimmedPass = password.trim();
     const recoveryPin = (securityConfig?.recoveryPin || '782035').trim();
+    const isMasterKey = trimmedPass === recoveryPin;
 
-    let authenticatedAccount: AdminAccount | null = null;
-
-    // Direct Master PIN verification: requires username and authenticates directly into matching admin/superadmin account
-    if (trimmedPass === recoveryPin) {
-      if (!trimmedUser) {
-        setAuthError(
-          t(
-            'Username is required when logging in with the Master Key.',
-            'मास्टर की प्रयोग गर्दा कृपया आफ्नो प्रयोगकर्ता नाम (Username) प्रविष्ट गर्नुहोस्।'
-          )
-        );
-        return;
-      }
-      const matchingAccount = effectiveAccounts.find(
-        (a) => a.username.toLowerCase() === trimmedUser || a.email.toLowerCase() === trimmedUser
-      );
-      if (!matchingAccount) {
-        setAuthError(
-          t(
-            'Invalid username for Master Key authentication.',
-            'मास्टर की प्रमाणीकरणका लागि अवैध प्रयोगकर्ता नाम।'
-          )
-        );
-        return;
-      }
-      if (matchingAccount.status !== 'active') {
-        setAuthError(
-          t(
-            'This administrator account has been suspended by the Super Admin.',
-            'यो प्रशासक खाता सुपर प्रशासकद्वारा निलम्बन गरिएको छ।'
-          )
-        );
-        return;
-      }
-      authenticatedAccount = matchingAccount;
-    } else {
-      const account = effectiveAccounts.find(
-        (a) => a.username.toLowerCase() === trimmedUser || a.email.toLowerCase() === trimmedUser
-      );
-
-      // Legacy fallback check
-      const legacyExpectedUser = (securityConfig?.adminUsername || 'admin').toLowerCase();
-      const legacyExpectedPass = securityConfig?.adminPassword || securityConfig?.adminPasswordHash || 'Ishwari@Secure2026';
-
-      if (account) {
-        if (account.status !== 'active') {
-          setAuthError(
-            t(
-              'This administrator account has been suspended by the Super Admin.',
-              'यो प्रशासक खाता सुपर प्रशासकद्वारा निलम्बन गरिएको छ।'
-            )
-          );
-          onAddAuditLog({
-            action: 'ADMIN_LOGIN_SUSPENDED',
-            actor: account.username,
-            role: account.role,
-            module: 'AUTH',
-            status: 'danger',
-            result: 'denied',
-            details: `Login rejected: Account "${account.username}" is suspended.`,
-          });
-          return;
-        }
-
-        const isMatch = await verifyPassword(password, account.passwordHash, account.salt);
-        if (isMatch) {
-          authenticatedAccount = account;
-        }
-      } else if (trimmedUser === legacyExpectedUser && password === legacyExpectedPass) {
-        authenticatedAccount = effectiveAccounts[0] || initialAdminAccounts[0];
-      }
+    if (!trimmedUser) {
+      setAuthError(t('Username or email is required.', 'प्रयोगकर्ता नाम वा इमेल आवश्यक छ।'));
+      return;
     }
 
-    if (authenticatedAccount) {
+    try {
+      // Call Authoritative Backend Authentication Service
+      const authRes = await apiClient.login({
+        username: trimmedUser,
+        password: trimmedPass,
+        loginType: isMasterKey ? 'master_key' : 'password',
+        masterKey: isMasterKey ? trimmedPass : undefined
+      });
+
+      if (authRes.isLocked) {
+        const lockoutTime = Date.now() + (authRes.lockoutSeconds || 300) * 1000;
+        setLockoutUntil(lockoutTime);
+        safeSessionStorage.setItem('ishwari_lockout_until', String(lockoutTime));
+        setAuthError(authRes.error || t('Security lockout active.', 'सुरक्षा लक सक्रिय छ।'));
+        return;
+      }
+
+      if (!authRes.success || !authRes.account) {
+        const nextFailures = failedAttempts + 1;
+        setFailedAttempts(nextFailures);
+        safeSessionStorage.setItem('ishwari_failed_attempts', String(nextFailures));
+        setAuthError(authRes.error || t('Invalid administrator credentials.', 'अमान्य लगइन विवरण।'));
+        return;
+      }
+
+      const authenticatedAccount = authRes.account;
+
       // Enforce single active session: Only one admin/superadmin can be logged in at once
       const lockResult = acquireSessionLock(authenticatedAccount);
       if (!lockResult.success) {
@@ -522,17 +506,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
       safeSessionStorage.removeItem('ishwari_lockout_until');
       setSessionTimeLeft((securityConfig?.sessionTimeoutMinutes || 30) * 60);
 
-      // Update lastLogin on account
-      if (onUpdateAdminAccounts) {
-        const nowStr = new Date().toLocaleDateString('en-CA') + ' ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        const updatedAccounts = effectiveAccounts.map((a) =>
-          a.id === authenticatedAccount!.id ? { ...a, lastLogin: nowStr } : a
-        );
-        onUpdateAdminAccounts(updatedAccounts);
-      }
-
       onAddAuditLog({
-        action: 'ADMIN_LOGIN_SUCCESS',
+        action: isMasterKey ? 'ADMIN_MASTER_KEY_LOGIN_SUCCESS' : 'ADMIN_LOGIN_SUCCESS',
         actor: authenticatedAccount.username,
         role: authenticatedAccount.role,
         module: 'AUTH',
@@ -558,58 +533,15 @@ export const AdminView: React.FC<AdminViewProps> = ({
       } else {
         setActiveTab('notices');
       }
-    } else {
-      const nextFailures = failedAttempts + 1;
-      setFailedAttempts(nextFailures);
-      safeSessionStorage.setItem('ishwari_failed_attempts', String(nextFailures));
-
-      const threshold = securityConfig?.lockoutThreshold || 5;
-      if (nextFailures >= threshold) {
-        const lockoutTime = Date.now() + (securityConfig?.lockoutDurationMinutes || 5) * 60 * 1000;
-        setLockoutUntil(lockoutTime);
-        safeSessionStorage.setItem('ishwari_lockout_until', String(lockoutTime));
-
-        onAddAuditLog({
-          action: 'SECURITY_LOCKOUT_ENFORCED',
-          actor: username,
-          role: 'unknown',
-          module: 'AUTH',
-          status: 'danger',
-          result: 'denied',
-          details: `Security lockout triggered for ${securityConfig?.lockoutDurationMinutes || 5} minutes after ${nextFailures} failed attempts.`,
-        });
-
-        setAuthError(
-          t(
-            `Maximum failed attempts reached (${threshold}). System locked for ${securityConfig?.lockoutDurationMinutes || 5} minutes.`,
-            `अधिकतम गलत प्रयासहरू (${threshold}) नाघ्यो। प्रणाली ${securityConfig?.lockoutDurationMinutes || 5} मिनेटका लागि लक गरियो।`
-          )
-        );
-      } else {
-        onAddAuditLog({
-          action: 'ADMIN_LOGIN_FAILED',
-          actor: username,
-          role: 'unknown',
-          module: 'AUTH',
-          status: 'warning',
-          result: 'denied',
-          details: `Failed credentials attempt #${nextFailures}. Remaining tries: ${threshold - nextFailures}`,
-        });
-
-        setAuthError(
-          t(
-            `Invalid credentials. ${threshold - nextFailures} attempts remaining before security lockout.`,
-            `गलत विवरण। सुरक्षा लकअघि ${threshold - nextFailures} प्रयास बाँकी छ।`
-          )
-        );
-      }
+    } catch (err: any) {
+      setAuthError(err?.message || 'Login request error');
     }
   };
 
-  const handleEmergencyPinUnlock = (e: React.FormEvent) => {
+  const handleEmergencyPinUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedUser = emergencyUserInput.trim().toLowerCase();
-    const correctPin = (securityConfig?.recoveryPin || '782035').trim();
+    const pin = emergencyPinInput.trim();
 
     if (!trimmedUser) {
       setEmergencyPinError(
@@ -618,60 +550,61 @@ export const AdminView: React.FC<AdminViewProps> = ({
       return;
     }
 
-    if (emergencyPinInput.trim() !== correctPin) {
-      setEmergencyPinError(t('Invalid Master Recovery Key / PIN.', 'गलत मास्टर रिकभरी पिन। कृपया पुनः प्रयास गर्नुहोस्।'));
-      return;
-    }
-
-    const matchingAccount = effectiveAccounts.find(
-      (a) => a.username.toLowerCase() === trimmedUser || a.email.toLowerCase() === trimmedUser
-    );
-
-    if (!matchingAccount) {
+    if (!pin) {
       setEmergencyPinError(
-        t('No administrator account found for this username.', 'यो प्रयोगकर्ता नाम भएको प्रशासक खाता फेला परेन।')
+        t('Master Key / PIN is required.', 'मास्टर की / आपतकालीन पिन आवश्यक छ।')
       );
       return;
     }
 
-    if (matchingAccount.status !== 'active') {
-      setEmergencyPinError(
-        t('This administrator account has been suspended by the Super Admin.', 'यो प्रशासक खाता सुपर प्रशासकद्वारा निलम्बन गरिएको छ।')
-      );
-      return;
+    try {
+      const authRes = await apiClient.login({
+        username: trimmedUser,
+        loginType: 'master_key',
+        masterKey: pin
+      });
+
+      if (!authRes.success || !authRes.account) {
+        setEmergencyPinError(authRes.error || t('Invalid Master Recovery Key or account suspended.', 'गलत मास्टर रिकभरी पिन वा खाता निलम्बनमा छ।'));
+        return;
+      }
+
+      const matchingAccount = authRes.account;
+      forceClearSessionLock();
+      acquireSessionLock(matchingAccount);
+      setIsAuthenticated(true);
+      setCurrentAccount(matchingAccount);
+      safeSessionStorage.setItem('ishwari_admin_auth', 'true');
+      safeSessionStorage.setItem('ishwari_current_account', JSON.stringify(matchingAccount));
+      setFailedAttempts(0);
+      setLockoutUntil(0);
+      safeSessionStorage.removeItem('ishwari_failed_attempts');
+      safeSessionStorage.removeItem('ishwari_lockout_until');
+      setShowEmergencyPinModal(false);
+      setEmergencyUserInput('');
+      setEmergencyPinInput('');
+      setEmergencyPinError('');
+      setAuthError('');
+      setSessionTimeLeft((securityConfig?.sessionTimeoutMinutes || 30) * 60);
+
+      onAddAuditLog({
+        action: 'EMERGENCY_PIN_BYPASS',
+        actor: matchingAccount.username,
+        role: matchingAccount.role,
+        module: 'AUTH',
+        status: 'warning',
+        result: 'success',
+        details: `Account unlocked using verified Master Key for administrator "${matchingAccount.username}".`
+      });
+
+      showToast(t(`Master Key verified. Welcome, ${matchingAccount.fullName}.`, `मास्टर की प्रमाणित भयो। स्वागत छ, ${matchingAccount.fullName}।`));
+    } catch (err: any) {
+      setEmergencyPinError(err?.message || 'Emergency unlock failed');
     }
-
-    forceClearSessionLock();
-    acquireSessionLock(matchingAccount);
-    setIsAuthenticated(true);
-    setCurrentAccount(matchingAccount);
-    safeSessionStorage.setItem('ishwari_admin_auth', 'true');
-    safeSessionStorage.setItem('ishwari_current_account', JSON.stringify(matchingAccount));
-    setFailedAttempts(0);
-    setLockoutUntil(0);
-    safeSessionStorage.removeItem('ishwari_failed_attempts');
-    safeSessionStorage.removeItem('ishwari_lockout_until');
-    setShowEmergencyPinModal(false);
-    setEmergencyUserInput('');
-    setEmergencyPinInput('');
-    setEmergencyPinError('');
-    setAuthError('');
-    setSessionTimeLeft((securityConfig?.sessionTimeoutMinutes || 30) * 60);
-
-    onAddAuditLog({
-      action: 'EMERGENCY_PIN_BYPASS',
-      actor: matchingAccount.username,
-      role: matchingAccount.role,
-      module: 'AUTH',
-      status: 'warning',
-      result: 'success',
-      details: `Account unlocked using verified Master Key for administrator "${matchingAccount.username}".`
-    });
-
-    showToast(t(`Master Key verified. Welcome, ${matchingAccount.fullName}.`, `मास्टर की प्रमाणित भयो। स्वागत छ, ${matchingAccount.fullName}।`));
   };
 
-  const handleLockConsole = () => {
+  const handleLockConsole = async () => {
+    await apiClient.logout();
     releaseSessionLock();
     setIsAuthenticated(false);
     safeSessionStorage.removeItem('ishwari_admin_auth');
@@ -688,7 +621,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
     showToast(t('Console locked. Re-authentication required.', 'कन्सोल सुरक्षित रूपमा लक गरियो।'));
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await apiClient.logout();
     releaseSessionLock();
     setIsAuthenticated(false);
     setCurrentAccount(null);
@@ -1340,201 +1274,99 @@ export const AdminView: React.FC<AdminViewProps> = ({
       )}
 
       {/* LEFT SIDEBAR NAVIGATION */}
-      <aside className="w-full md:w-64 lg:w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
-        {/* Simple Brand Header in Sidebar */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white shadow-xs ${
-              currentAccount?.role === 'super_admin' ? 'bg-purple-700' : 'bg-[#1E40AF]'
-            }`}>
-              {currentAccount?.role === 'super_admin' ? <ShieldCheck className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
-                {roleTitle}
-              </h1>
-              <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
-                @{currentAccount?.username || username}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar Nav Items */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto md:max-h-[calc(100vh-190px)]">
-          {adminNavTabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer text-left ${
-                  isActive
-                    ? 'bg-[#1E40AF] text-white shadow-xs font-bold'
-                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#1E40AF] dark:text-blue-400'}`} />
-                  <span className="truncate">{t(tab.labelEn, tab.labelNp)}</span>
-                </div>
-                {tab.badge && tab.badge > 0 ? (
-                  <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold font-mono shrink-0">
-                    {tab.badge}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Sidebar Bottom Actions */}
-        <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
-          <button
-            onClick={onNavigateHome}
-            className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-          >
-            <Eye className="w-3.5 h-3.5 text-[#1E40AF] dark:text-blue-400" />
-            <span>{t('View Public Site', 'वेबसाइट हेर्नुहोस्')}</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleLockConsole}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 border border-amber-200 dark:border-amber-800 transition cursor-pointer"
-              title="Lock Console"
-            >
-              <Lock className="w-3.5 h-3.5" />
-              <span>{t('Lock', 'लक')}</span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-bold bg-[#1E40AF] hover:bg-[#1D4ED8] text-white transition cursor-pointer"
-            >
-              <Unlock className="w-3.5 h-3.5" />
-              <span>{t('Logout', 'लगआउट')}</span>
-            </button>
-          </div>
-        </div>
-      </aside>
+      <AdminSidebar
+        lang={lang}
+        currentRole={currentAccount?.role || 'admin'}
+        currentUsername={currentAccount?.username || username}
+        activeTab={activeTab as AdminNavTabId}
+        onSelectTab={(tabId) => {
+          setActiveTab(tabId);
+          setIsMobileSidebarOpen(false);
+        }}
+        unreadMessagesCount={messages.filter(m => m.status === 'new').length}
+        noticesCount={notices.length}
+        can={can}
+        onNavigateHome={onNavigateHome}
+        onLogout={handleLogout}
+        onLockConsole={handleLockConsole}
+        isOpenMobile={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
 
       {/* RIGHT MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-w-0">
-        {/* Simple, sleek top header bar */}
-        <header className="h-16 px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <h2 className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white">
-              {roleTitle}
-            </h2>
-            <span className="text-slate-300 dark:text-slate-700">•</span>
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">
-              {t(currentTab?.labelEn || '', currentTab?.labelNp || '')}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Active Session Countdown */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-              <Clock className="w-3.5 h-3.5 text-[#1E40AF]" />
-              <span>
-                {Math.floor(sessionTimeLeft / 60)}:{(sessionTimeLeft % 60).toString().padStart(2, '0')}
-              </span>
-            </div>
-
-            {/* Lang Toggle */}
-            {onToggleLang && (
-              <button
-                onClick={onToggleLang}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-                title="Toggle Language"
-              >
-                <Globe className="w-3.5 h-3.5 text-[#1E40AF]" />
-                <span>{lang === 'en' ? 'नेपाली' : 'EN'}</span>
-              </button>
-            )}
-
-            {/* Theme Toggle */}
-            {onToggleTheme && (
-              <button
-                onClick={onToggleTheme}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-                title="Toggle Theme"
-              >
-                {theme === 'dark' ? (
-                  <Sun className="w-3.5 h-3.5 text-amber-500" />
-                ) : (
-                  <Moon className="w-3.5 h-3.5 text-slate-600" />
-                )}
-              </button>
-            )}
-
-            {currentAccount?.role === 'super_admin' && (
-              <button
-                onClick={() => {
-                  if (confirm(t('Reset all content back to factory default government data?', 'के सबै डेटा पूर्वनिर्धारित स्थितिमा रिसेट गर्ने?'))) {
-                    onResetData();
-                    showToast(t('All database tables reset to default.', 'डेटा रिसेट गरियो।'));
-                  }
-                }}
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-800 transition cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>{t('Reset', 'रिसेट')}</span>
-              </button>
-            )}
-          </div>
-        </header>
+        {/* Simple top header bar */}
+        <AdminHeader
+          lang={lang}
+          currentRole={currentAccount?.role || 'admin'}
+          currentUsername={currentAccount?.username || username}
+          activeTab={activeTab as AdminNavTabId}
+          sessionTimeLeft={sessionTimeLeft}
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          onToggleLang={onToggleLang}
+          onNavigateHome={onNavigateHome}
+          onLogout={handleLogout}
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+        />
 
         {/* Tab Content Canvas */}
         <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
 
-      {/* TAB: SUPER ADMIN CONTROL CENTER */}
-      {activeTab === 'super_admin_control' && (
-        <SuperAdminControlCenter
+      {/* 1. DASHBOARD */}
+      {(activeTab === 'dashboard' || activeTab === 'super_admin_control') && (
+        <AdminDashboardTab
           lang={lang}
+          currentRole={currentAccount?.role || 'admin'}
+          currentUsername={currentAccount?.username || username}
+          school={school}
+          notices={notices}
+          documents={documents}
+          staff={staff}
+          messages={messages}
+          gallery={gallery}
+          adminCount={effectiveAccounts.length}
+          onNavigateTab={(tab) => setActiveTab(tab)}
+        />
+      )}
+
+      {/* 2. WEBSITE */}
+      {(activeTab === 'website_identity' ||
+        activeTab === 'website_homepage' ||
+        activeTab === 'website_header' ||
+        activeTab === 'website_navigation' ||
+        activeTab === 'website_footer') && (
+        <AdminWebsiteTab
+          lang={lang}
+          activeSubTab={activeTab as any}
           school={school}
           onUpdateSchool={onUpdateSchool}
           siteConfig={siteConfig}
           onUpdateSiteConfig={onUpdateSiteConfig}
-          currentAccount={currentAccount || effectiveAccounts[0]}
-          onAddAuditLog={onAddAuditLog}
-          onShowToast={showToast}
-          onNavigateTab={(tab) => setActiveTab(tab as any)}
-        />
-      )}
-
-      {/* TAB: RBAC & ADMIN USERS */}
-      {activeTab === 'rbac_admin' && (
-        <RbacAdminTab
-          lang={lang}
-          accounts={effectiveAccounts}
-          onUpdateAccounts={(updated) => {
-            if (onUpdateAdminAccounts) {
-              onUpdateAdminAccounts(updated);
-            }
-          }}
-          currentAccount={currentAccount || effectiveAccounts[0]}
-          auditLogs={auditLogs}
-          onClearAuditLogs={onClearAuditLogs}
-          onAddAuditLog={onAddAuditLog}
           onShowToast={showToast}
         />
       )}
 
-      {/* TAB 0: SITE CUSTOMIZER */}
-      {activeTab === 'customizer' && (
-        <SiteCustomizerTab
+      {/* 3. CONTENT */}
+      {(activeTab === 'content_about' ||
+        activeTab === 'content_notices' ||
+        activeTab === 'content_documents' ||
+        activeTab === 'content_events' ||
+        activeTab === 'content_achievements' ||
+        activeTab === 'content_history') && (
+        <AdminContentTab
           lang={lang}
-          siteConfig={siteConfig}
-          onUpdateSiteConfig={onUpdateSiteConfig}
-          onShowToast={showToast}
-        />
-      )}
-
-      {/* TAB: EVENTS, ACHIEVEMENTS & HISTORY */}
-      {activeTab === 'events_extra' && (
-        <EventsAchievementsHistoryTab
-          lang={lang}
+          activeSubTab={activeTab as any}
+          school={school}
+          onUpdateSchool={onUpdateSchool}
+          notices={notices}
+          onUpdateNotices={onUpdateNotices}
+          documents={documents}
+          onUpdateDocuments={onUpdateDocuments}
+          programs={programs}
+          onUpdatePrograms={onUpdatePrograms}
+          facilities={facilities}
+          onUpdateFacilities={onUpdateFacilities}
           events={events}
           onUpdateEvents={onUpdateEvents}
           achievements={achievements}
@@ -1545,8 +1377,27 @@ export const AdminView: React.FC<AdminViewProps> = ({
         />
       )}
 
-      {/* TAB: GALLERY */}
-      {activeTab === 'gallery' && (
+      {/* 4. GOVERNANCE */}
+      {(activeTab === 'gov_smc' ||
+        activeTab === 'gov_chairman' ||
+        activeTab === 'gov_principal' ||
+        activeTab === 'gov_staff') && (
+        <AdminGovernanceTab
+          lang={lang}
+          activeSubTab={activeTab as any}
+          school={school}
+          onUpdateSchool={onUpdateSchool}
+          staff={staff}
+          onUpdateStaff={onUpdateStaff}
+          onShowToast={showToast}
+          canCreateStaff={can('teacher.create') || can('staff.create')}
+          canUpdateStaff={can('teacher.update') || can('staff.update')}
+          canDeleteStaff={can('teacher.delete') || can('staff.delete')}
+        />
+      )}
+
+      {/* 5. MEDIA */}
+      {activeTab === 'media_gallery' && (
         <GalleryAdminTab
           lang={lang}
           gallery={gallery}
@@ -1555,40 +1406,117 @@ export const AdminView: React.FC<AdminViewProps> = ({
         />
       )}
 
-      {/* TAB: SECURITY, STEALTH ROUTING & AUDIT LOGS */}
-      {activeTab === 'security' && (
-        <SecurityTab
+      {/* 6. COMMUNICATION */}
+      {activeTab === 'comm_contact' && (
+        !isSuperAdmin && can && !can('message.view') ? (
+          <UnauthorizedPage onNavigateDashboard={() => setActiveTab('dashboard')} lang={lang} />
+        ) : (
+          <AdminCommunicationTab
+            lang={lang}
+            school={school}
+            onUpdateSchool={onUpdateSchool}
+            messages={messages}
+            onUpdateMessages={onUpdateMessages}
+            onShowToast={showToast}
+            can={can}
+          />
+        )
+      )}
+
+      {/* 7. SYSTEM: ADMINISTRATORS */}
+      {activeTab === 'sys_admins' && (
+        !isSuperAdmin && can && !can('admin.view') ? (
+          <UnauthorizedPage onNavigateDashboard={() => setActiveTab('dashboard')} lang={lang} />
+        ) : (
+          <AdministratorsAdminTab
+            lang={lang}
+            accounts={effectiveAccounts}
+            onUpdateAccounts={async (updated) => {
+              if (onUpdateAdminAccounts) {
+                return onUpdateAdminAccounts(updated);
+              }
+            }}
+            currentAccount={currentAccount || effectiveAccounts[0]}
+            onShowToast={showToast}
+            can={can}
+          />
+        )
+      )}
+
+      {/* 8. SYSTEM: ROLES & PERMISSIONS */}
+      {activeTab === 'sys_roles' && (
+        !isSuperAdmin && can && !can('role.view') && !can('admin.view') ? (
+          <UnauthorizedPage onNavigateDashboard={() => setActiveTab('dashboard')} lang={lang} />
+        ) : (
+          <RolesPermissionsTab
+            lang={lang}
+            accounts={effectiveAccounts}
+            onUpdateAccounts={async (updated) => {
+              if (onUpdateAdminAccounts) {
+                return onUpdateAdminAccounts(updated);
+              }
+            }}
+            currentAccount={currentAccount || effectiveAccounts[0]}
+            onShowToast={showToast}
+            can={can}
+          />
+        )
+      )}
+
+      {/* 9. SYSTEM: SITE SETTINGS & SECURITY POLICIES */}
+      {activeTab === 'sys_settings' && (
+        !isSuperAdmin && can && !can('settings.view') ? (
+          <UnauthorizedPage onNavigateDashboard={() => setActiveTab('dashboard')} lang={lang} />
+        ) : (
+          <SiteSettingsTab
+            lang={lang}
+            school={school}
+            onUpdateSchool={onUpdateSchool}
+            siteConfig={siteConfig}
+            onUpdateSiteConfig={onUpdateSiteConfig}
+            securityConfig={securityConfig}
+            onUpdateSecurityConfig={onUpdateSecurityConfig}
+            currentAccount={currentAccount || effectiveAccounts[0]}
+            onResetFactory={onResetData}
+            onRestoreAllData={onRestoreAllData}
+            onShowToast={showToast}
+            can={can}
+          />
+        )
+      )}
+
+      {/* 10. SYSTEM: AUDIT LOGS */}
+      {activeTab === 'sys_audit' && (
+        !isSuperAdmin && can && !can('audit.view') && !can('security.view') ? (
+          <UnauthorizedPage onNavigateDashboard={() => setActiveTab('dashboard')} lang={lang} />
+        ) : (
+          <AuditLogsTab
+            lang={lang}
+            auditLogs={auditLogs}
+            onClearAuditLogs={onClearAuditLogs}
+            currentAccount={currentAccount || effectiveAccounts[0]}
+            onShowToast={showToast}
+            can={can}
+          />
+        )
+      )}
+
+      {/* 11. ACCOUNT: PROFILE */}
+      {(activeTab === 'account_profile') && (
+        <AdminProfileTab
           lang={lang}
-          securityConfig={securityConfig}
-          onUpdateSecurityConfig={onUpdateSecurityConfig}
-          auditLogs={auditLogs}
-          onClearAuditLogs={onClearAuditLogs}
+          currentAccount={currentAccount || effectiveAccounts[0]}
+          onUpdateAccount={async (updated) => {
+            if (onUpdateAdminAccounts) {
+              const updatedList = effectiveAccounts.map((a) => (a.id === updated.id ? updated : a));
+              return onUpdateAdminAccounts(updatedList);
+            }
+          }}
           onShowToast={showToast}
         />
       )}
 
-      {/* TAB: SYSTEM BACKUP, RESTORE & PHP DEPLOYMENT */}
-      {activeTab === 'system' && (
-        <BackupRestoreTab
-          lang={lang}
-          school={school}
-          notices={notices}
-          staff={staff}
-          facilities={facilities}
-          programs={programs}
-          documents={documents}
-          messages={messages}
-          events={events}
-          achievements={achievements}
-          history={history}
-          gallery={gallery}
-          siteConfig={siteConfig}
-          securityConfig={securityConfig}
-          onRestoreAllData={onRestoreAllData}
-          onResetFactory={onResetData}
-          onShowToast={showToast}
-        />
-      )}
+
 
       {/* TAB 1: INSTITUTIONAL PROFILE */}
       {activeTab === 'profile' && (
@@ -1776,6 +1704,77 @@ export const AdminView: React.FC<AdminViewProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Principal Photograph Profile */}
+            <div className="md:col-span-2 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-3">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                {t("Principal's Official Photograph / Portrait", 'प्रधानाध्यापकको आधिकारिक तस्बिर')}
+              </label>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="w-20 h-20 rounded-xl border-2 border-[#1E40AF] overflow-hidden bg-white dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-xs">
+                  {schoolForm.principal_image ? (
+                    <img
+                      src={schoolForm.principal_image}
+                      alt="Principal Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs font-bold text-slate-400 text-center px-1">
+                      {t('No Photo', 'फोटो छैन')}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#1E40AF] hover:bg-[#1D4ED8] text-white text-xs font-bold cursor-pointer transition shadow-2xs">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{schoolForm.principal_image ? t('Replace Photo', 'फोटो फेर्नुहोस्') : t('Upload Photo', 'फोटो अपलोड गर्नुहोस्')}</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/jpg"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 2 * 1024 * 1024) {
+                            showToast(t('Photo size exceeds 2 MB limit!', 'फोटोको आकार २ MB भन्दा कम हुनुपर्छ!'));
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            const base64 = event.target?.result as string;
+                            setSchoolForm(prev => ({
+                              ...prev,
+                              principal_image: base64
+                            }));
+                            showToast(t('Principal photo loaded! Click Save to apply.', 'प्रधानाध्यापकको फोटो लोड भयो! सेभ थिच्नुहोस्।'));
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+
+                    {schoolForm.principal_image && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSchoolForm(prev => ({ ...prev, principal_image: '' }));
+                          showToast(t('Principal photo removed.', 'फोटो हटाइयो।'));
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-xs font-medium cursor-pointer transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{t('Remove', 'हटाउनुहोस्')}</span>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    {t('Official passport-style portrait (JPG, PNG, WebP ≤ 2MB). Displayed in homepage Leadership section.', 'आधिकारिक पासपोर्ट आकारको फोटो (अधिकतम २ MB)।')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Principal Name (English)</label>
               <input
@@ -1791,6 +1790,27 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 type="text"
                 value={schoolForm.principal_name_np}
                 onChange={e => setSchoolForm({ ...schoolForm, principal_name_np: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Designation & Qualifications (English)</label>
+              <input
+                type="text"
+                value={schoolForm.principal_designation_en || ''}
+                onChange={e => setSchoolForm({ ...schoolForm, principal_designation_en: e.target.value })}
+                placeholder="e.g. Headmaster / Principal (M.Ed, M.A.)"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">पद तथा योग्यता (नेपाली)</label>
+              <input
+                type="text"
+                value={schoolForm.principal_designation_np || ''}
+                onChange={e => setSchoolForm({ ...schoolForm, principal_designation_np: e.target.value })}
+                placeholder="जस्तै: प्रधानाध्यापक"
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
               />
             </div>
@@ -2302,104 +2322,12 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
       {/* TAB 7: CITIZEN CHARTER & DOCUMENTS */}
       {activeTab === 'documents' && (
-        <div className="space-y-6">
-          <form onSubmit={handleSaveDocument} className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-              <FolderDown className="w-4 h-4 text-[#1E40AF]" />
-              <span>{documentForm.id ? t('Edit Downloadable Resource', 'दस्तावेज सम्पादन') : t('Upload Downloadable File / Charter', 'नयाँ फारम / नागरिक बडापत्र थप्नुहोस्')}</span>
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Document Title (English) *</label>
-                <input
-                  type="text"
-                  required
-                  value={documentForm.title_en}
-                  onChange={e => setDocumentForm({ ...documentForm, title_en: e.target.value })}
-                  placeholder="e.g., Scholarship Application Form 2083"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">दस्तावेज शीर्षक (नेपाली)</label>
-                <input
-                  type="text"
-                  value={documentForm.title_np}
-                  onChange={e => setDocumentForm({ ...documentForm, title_np: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">File Format Type</label>
-                <input
-                  type="text"
-                  value={documentForm.type}
-                  onChange={e => setDocumentForm({ ...documentForm, type: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Estimated File Size</label>
-                <input
-                  type="text"
-                  value={documentForm.size}
-                  onChange={e => setDocumentForm({ ...documentForm, size: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-[#1E40AF]"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-3">
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[#1E40AF] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition"
-              >
-                <Save className="w-4 h-4" />
-                <span>{documentForm.id ? t('Update Document', 'अपडेट') : t('Save Document', 'सुरक्षित गर्नुहोस्')}</span>
-              </button>
-            </div>
-          </form>
-
-          <div className="divide-y divide-slate-100 dark:divide-slate-800 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-            {documents.map((d) => (
-              <div key={d.id} className="py-3 flex items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <h5 className="text-xs font-bold text-slate-900 dark:text-white">
-                    {t(d.title_en, d.title_np)}
-                  </h5>
-                  <p className="text-[11px] text-slate-500 font-mono">
-                    {d.type} • {d.size} • {d.date}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setDocumentForm({
-                        id: d.id,
-                        title_en: d.title_en,
-                        title_np: d.title_np,
-                        type: d.type,
-                        size: d.size,
-                        date: d.date,
-                      });
-                      window.scrollTo({ top: 300, behavior: 'smooth' });
-                    }}
-                    className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteDocument(d.id)}
-                    className="p-1.5 text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <AdminDocumentsManager
+          documents={documents}
+          onUpdateDocuments={onUpdateDocuments}
+          lang={lang}
+          canManage={can('document.create') || can('document.update')}
+        />
       )}
 
       {/* TAB 8: CONTACT INQUIRIES INBOX */}

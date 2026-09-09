@@ -7,11 +7,10 @@ import {
   FolderArchive,
   Calendar,
   CheckCircle2,
-  X,
-  FileCheck2,
-  ShieldCheck
+  FileCheck2
 } from 'lucide-react';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { DocumentViewerModal } from '../components/DocumentViewerModal';
 
 interface DocumentsViewProps {
   lang: Language;
@@ -27,47 +26,32 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ lang, documents })
   const isNp = lang === 'np';
   const t = (en: string, np: string) => (isNp ? np : en);
 
-  const filteredDocs = documents.filter(d =>
-    d.title_en.toLowerCase().includes(query.toLowerCase()) ||
-    d.title_np.toLowerCase().includes(query.toLowerCase())
-  );
+  const filteredDocs = documents.filter(d => {
+    // Only published documents appear on public view
+    if (d.is_published === false || d.status === 'draft') return false;
+    return (
+      d.title_en.toLowerCase().includes(query.toLowerCase()) ||
+      d.title_np.toLowerCase().includes(query.toLowerCase()) ||
+      (d.type && d.type.toLowerCase().includes(query.toLowerCase()))
+    );
+  });
 
   const executeDownload = (doc: DocumentItem) => {
-    const content = `=====================================================
-ISHWARI SECONDARY SCHOOL (ईश्वरी माध्यमिक विद्यालय)
-Official Public Institutional Repository & Citizen Charter
-EMIS: 48012004 • Affiliated to NEB Nepal
-=====================================================
-Document Reference: DOC-${doc.id}
-Document Title: ${doc.title_en} (${doc.title_np})
-Category / Type: ${doc.type}
-Certified File Size: ${doc.size}
-Verification Date: ${doc.date}
-
-DOCUMENT CERTIFICATION:
-This document represents an authenticated institutional record issued by
-Ishwari Secondary School, Bheerkot-4, Syangja, Gandaki Province, Nepal.
-
-Certified by:
-Office of the Principal / Administration
-Ishwari Secondary School
-=====================================================`;
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+    // Authoritative direct download endpoint
+    const downloadUrl = `/api/documents/${doc.id}/download`;
     const link = document.createElement('a');
-    link.href = url;
-    const safeName = doc.title_en.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    link.download = `ishwari_${safeName}.txt`;
+    link.href = downloadUrl;
+    const rawName = doc.original_filename || `${(doc.title_en || 'document').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+    const safeName = rawName.endsWith('.pdf') ? rawName : `${rawName}.pdf`;
+    link.setAttribute('download', safeName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
 
     setDownloadToast(
       t(
         `Downloaded official document: ${doc.title_en}`,
-        `कागजात डाउनलोड भयो: ${doc.title_np}`
+        `कागजात डाउनलोड भयो: ${doc.title_np || doc.title_en}`
       )
     );
     setTimeout(() => setDownloadToast(null), 3500);
@@ -83,84 +67,16 @@ Ishwari Secondary School
         </div>
       )}
 
-      {/* Medium-sized Centered Document Viewer Modal */}
-      {previewDoc && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
-          onClick={() => setPreviewDoc(null)}
-        >
-          <div
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-start justify-between gap-3">
-              <div className="space-y-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                    {previewDoc.type}
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-slate-400" />
-                    <span>{previewDoc.date}</span>
-                  </span>
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
-                  {t(previewDoc.title_en, previewDoc.title_np)}
-                </h3>
-              </div>
-            </div>
-
-            {/* Document Details Body */}
-            <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 font-mono text-[11px] space-y-1.5 text-slate-600 dark:text-slate-400">
-                <div className="flex justify-between items-center">
-                  <span>Ref: ISS-DOC-{previewDoc.id}-2083</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">{previewDoc.size}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-500">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>{t('Verified Institutional Record • Public Repository', 'प्रमाणित अभिलेख • सार्वजनिक भण्डार')}</span>
-                </div>
-              </div>
-
-              <p className="leading-relaxed">
-                {t(
-                  'This official document is published by Ishwari Secondary School for public information, institutional transparency, and administrative reference. You can securely download this verified document to your device.',
-                  'यो आधिकारिक कागजात ईश्वरी माध्यमिक विद्यालयद्वारा सार्वजनिक जानकारी, पारदर्शिता र प्रशासनिक प्रयोजनका लागि प्रकाशित गरिएको हो। तपाईं यो दस्तावेज आफ्नो उपकरणमा सुरक्षित डाउनलोड गर्न सक्नुहुन्छ।'
-                )}
-              </p>
-            </div>
-
-            {/* Bottom Controls: Bottom-left: subtle/dim red close icon; Bottom-right: vivid purple download icon */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setPreviewDoc(null)}
-                title={t('Close Document', 'कागजात बन्द गर्नुहोस्')}
-                aria-label={t('Close Document', 'कागजात बन्द गर्नुहोस्')}
-                className="p-2 rounded-lg text-red-500/70 hover:text-red-600 dark:text-red-400/70 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
-              >
-                <X className="w-5 h-5 stroke-[1.8]" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const toDownload = previewDoc;
-                  setPreviewDoc(null);
-                  setPendingDownloadDoc(toDownload);
-                }}
-                title={t('Download Document', 'कागजात डाउनलोड गर्नुहोस्')}
-                aria-label={t('Download Document', 'कागजात डाउनलोड गर्नुहोस्')}
-                className="p-2 rounded-lg text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition cursor-pointer"
-              >
-                <Download className="w-5 h-5 stroke-[1.8]" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Shared Medium-sized Centered Document Viewer Modal */}
+      <DocumentViewerModal
+        document={previewDoc}
+        onClose={() => setPreviewDoc(null)}
+        onDownload={(doc) => {
+          setPreviewDoc(null);
+          setPendingDownloadDoc(doc);
+        }}
+        lang={lang}
+      />
 
       {/* Download Confirmation Modal */}
       {pendingDownloadDoc && (

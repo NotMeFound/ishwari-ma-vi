@@ -20,19 +20,24 @@ export const initialSchoolData: SchoolData = {
   name_np: "श्री ईश्वरी माध्यमिक विद्यालय",
   tagline_en: "Center for Academic Excellence & Character Building",
   tagline_np: "शैक्षिक उत्कृष्टता र चरित्र निर्माणको अग्रणी केन्द्र",
-  affiliation_en: "Government of Nepal Secondary School",
-  affiliation_np: "नेपाल सरकार माध्यमिक विद्यालय",
+  affiliation_en: "Center for Academic Excellence & Character Building",
+  affiliation_np: "शैक्षिक उत्कृष्टता र चरित्र निर्माणको केन्द्र",
   code: "EMIS: 48012004",
-  estd_bs: "2026 B.S.",
-  estd_ad: "1978 A.D.",
+  estd_bs: "2028 B.S.",
+  estd_ad: "1971 A.D.",
   phone: "+977-01-5542109 / 9851234567",
   email: "info@ishwari.edu.np",
-  address_en: "Ward No. 6, H Gaun Baijanath Municipality-Banke, Nepal",
-  address_np: "वडा नं. ६, एच गाउँ, बैजनाथ गाउँपालिका-बाँके, नेपाल",
-  principal_name_en: "Mr. Mangal Khatri",
-  principal_name_np: "श्री मङ्गल खत्री)",
-  principal_message_en: "Welcome to Ishwari Secondary School. For over four decades, our institution has stood as a beacon of public education, blending academic rigor with compassionate moral values. We are committed to fostering critical inquiry, digital literacy, and community leadership in every student.",
-  principal_message_np: "ईश्वरी माध्यमिक विद्यालयको आधिकारिक डिजिटल पोर्टलमा यहाँहरूलाई हार्दिक स्वागत छ। वि.सं. २०२६ सालदेखि यस भेगकै अग्रणी सामुदायिक नमुना विद्यालयको रूपमा हामीले विद्यार्थीहरूको चौतर्फी विकासमा जोड दिँदै आएका छौं।"
+  address_en: "Baijanath-5, Banke, Nepal",
+  address_np: "बैजनाथ-५, बाँके, नेपाल",
+  principal_name_en: "Mr. Narayan Prasad Koirala",
+  principal_name_np: "श्री नारायण प्रसाद कोइराला",
+  principal_designation_en: "Headmaster / Principal (M.Ed, M.A.)",
+  principal_designation_np: "प्रधानाध्यापक",
+  principal_image: "",
+  principal_message_en: "Welcome to Shree Ishwari Secondary School. For over five decades, our institution has stood as a beacon of public education, blending academic rigor with compassionate moral values. We are committed to fostering critical inquiry, digital literacy, and community leadership in every student.",
+  principal_message_np: "श्री ईश्वरी माध्यमिक विद्यालयको आधिकारिक डिजिटल पोर्टलमा यहाँहरूलाई हार्दिक स्वागत छ। वि.सं. २०२८ सालदेखि यस भेगकै अग्रणी सामुदायिक विद्यालयको रूपमा हामीले विद्यार्थीहरूको चौतर्फी विकासमा जोड दिँदै आएका छौं।",
+  home_bg_image: "",
+  home_bg_enabled: false,
 };
 
 export const initialNotices: Notice[] = [
@@ -77,8 +82,8 @@ export const initialNotices: Notice[] = [
 export const initialStaff: StaffMember[] = [
   {
     id: 1,
-    name_en: "Mr. Mangal Khatri",
-    name_np: "श्री मङ्गल खत्री)",
+    name_en: "Mr. Narayan Prasad Koirala",
+    name_np: "श्री नारायण प्रसाद कोइराला",
     role: "principal",
     designation_en: "Headmaster / Principal (M.Ed, M.A.)",
     designation_np: "प्रधानाध्यापक (एम.एड, एम.ए.)",
@@ -86,8 +91,8 @@ export const initialStaff: StaffMember[] = [
   },
   {
     id: 2,
-    name_en: "Mrs. Bhim Bahadur Khatri",
-    name_np: "श्री भीम बहादुर खत्री",
+    name_en: "Mrs. Sharada Devi Sharma",
+    name_np: "श्रीमती शारदा देवी शर्मा",
     role: "teacher",
     designation_en: "Senior Science Coordinator (M.Sc. Physics)",
     designation_np: "वरिष्ठ विज्ञान संयोजक (एम.एससी.)",
@@ -120,7 +125,14 @@ export const initialFacilities: Facility[] = [
     title_np: "अत्याधुनिक विज्ञान प्रयोगशाला (भौतिक, रसायन र जीवविज्ञान)",
     desc_en: "Fully equipped secondary and higher secondary laboratories with precision apparatus for individual experimentation under certified instructor supervision.",
     desc_np: "नेपाल सरकारको नमुना विद्यालय मापदण्ड अनुसार निर्मित भौतिकशास्त्र, रसायनशास्त्र र जीवविज्ञानका आधुनिक प्रयोगात्मक उपकरणयुक्त प्रयोगशाला।",
-    icon: "🔬"
+    icon: "🔬",
+    category: "science",
+    order: 1,
+    published: true,
+    backgroundImage: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1200&q=80",
+    backgroundImageEnabled: true,
+    backgroundImageAltEn: "Modern Science Laboratory Equipment and Workbenches",
+    backgroundImageAltNp: "आधुनिक विज्ञान प्रयोगशाला उपकरण तथा कार्यस्थल"
   },
   {
     id: 2,
@@ -128,7 +140,14 @@ export const initialFacilities: Facility[] = [
     title_np: "सूचना तथा सञ्चार प्रविधि (ICT) केन्द्र",
     desc_en: "Air-conditioned 45-terminal computer lab connected to dedicated optical fiber broadband with smart interactive display systems.",
     desc_np: "४५ थान अत्याधुनिक कम्प्युटर, तीव्र गतिको इन्टरनेट र डिजिटल स्मार्ट बोर्डसहितको कम्प्युटर ल्याब।",
-    icon: "💻"
+    icon: "💻",
+    category: "ict",
+    order: 2,
+    published: true,
+    backgroundImage: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80",
+    backgroundImageEnabled: true,
+    backgroundImageAltEn: "Advanced Computer Laboratory with High-Speed Workstations",
+    backgroundImageAltNp: "तीव्र गतिको कम्प्युटर ल्याब र स्मार्ट प्रविधि"
   },
   {
     id: 3,
@@ -136,7 +155,14 @@ export const initialFacilities: Facility[] = [
     title_np: "पुस्तकालय तथा इ-पुस्तकालय (ई-पुस्तकालय)",
     desc_en: "Over 6,500 curriculum texts, reference encyclopedias, competitive exam materials, and local digital archives.",
     desc_np: "६,५०० भन्दा बढी पुस्तकहरू, पत्रपत्रिका र डिजिटल शैक्षिक स्रोतहरूले सुसज्जित समृद्ध पुस्तकालय।",
-    icon: "📚"
+    icon: "📚",
+    category: "library",
+    order: 3,
+    published: true,
+    backgroundImage: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1200&q=80",
+    backgroundImageEnabled: true,
+    backgroundImageAltEn: "Extensive Reference Library Stacks and Study Hall",
+    backgroundImageAltNp: "समृद्ध पुस्तकालय तथा सन्दर्भ सामग्री सङ्ग्रह"
   },
   {
     id: 4,
@@ -144,7 +170,14 @@ export const initialFacilities: Facility[] = [
     title_np: "खेलकुद पूर्वाधार तथा खुला मैदान",
     desc_en: "Full-sized volleyball court, badminton courts, table tennis hall, and athletic track ground hosting annual zonal tournaments.",
     desc_np: "भलिबल, टेबलटेनिस, ब्याडमिन्टन तथा एथलेटिक्सका लागि व्यवस्थित खेल मैदान।",
-    icon: "🏐"
+    icon: "🏐",
+    category: "sports",
+    order: 4,
+    published: true,
+    backgroundImage: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1200&q=80",
+    backgroundImageEnabled: true,
+    backgroundImageAltEn: "Open Athletics Track and Sports Field Ground",
+    backgroundImageAltNp: "खुला खेलकुद मैदान तथा एथलेटिक्स ट्र्याक"
   }
 ];
 
@@ -196,7 +229,7 @@ export const initialAchievements: Achievement[] = [
 
 export const initialHistory: HistoryItem[] = [
   {
-    year: "2035 B.S. (1978 A.D.)",
+    year: "2028 B.S. (1971 A.D.)",
     title_en: "Founding as Community Primary School",
     title_np: "प्राथमिक विद्यालयको रूपमा स्थापना",
     desc_en: "Inaugurated through community patronage to provide accessible education to rural youths.",
@@ -353,12 +386,23 @@ export const initialSiteConfig: SiteCustomizerConfig = {
   showAlertTicker: true,
   alertTickerEn: 'Annual Examination Routine (Grades 1 to 9) Published for Session 2083',
   alertTickerNp: 'शैक्षिक सत्र २०८३ को वार्षिक परीक्षा तालिका (कक्षा १ देखि ९ सम्म) प्रकाशित गरिएको बारे',
-  heroBadgeEn: 'GOVERNMENT OF NEPAL MODEL SECONDARY SCHOOL',
-  heroBadgeNp: 'नेपाल सरकार नमुना माध्यमिक विद्यालय',
-  heroTitleEn: 'Cultivating Academic Excellence & Responsible Citizens Since 2035 B.S.',
-  heroTitleNp: 'शैक्षिक उत्कृष्टता र नैतिक चरित्र निर्माणको चार दशक लामो यात्रा।',
+  heroBadgeEn: 'CENTER FOR ACADEMIC EXCELLENCE & CHARACTER BUILDING',
+  heroBadgeNp: 'शैक्षिक उत्कृष्टता र चरित्र निर्माणको केन्द्र',
+  heroTitleEn: 'Cultivating Academic Excellence & Responsible Citizens Since 2028 B.S.',
+  heroTitleNp: 'शैक्षिक उत्कृष्टता र नैतिक चरित्र निर्माणको पाँच दशक लामो यात्रा।',
   heroSubtitleEn: 'A premier community educational institution offering experiential STEM pedagogy, digital classrooms, high-standard laboratories, and holistic secondary and higher secondary education.',
   heroSubtitleNp: 'अनुभवी शिक्षक, आधुनिक विज्ञान तथा कम्प्युटर प्रयोगशाला र डिजिटल स्मार्ट कक्षाकोठाका माध्यमबाट विद्यार्थीहरूको चौतर्फी विकासमा समर्पित।',
+  homeBgImage: '',
+  homeBgEnabled: false,
+  homeBgOverlayOpacity: 85,
+  hero_background_image: '',
+  hero_background_enabled: true,
+  hero_background_alt_en: 'Ishwari Secondary School Campus',
+  hero_background_alt_np: 'ईश्वरी माध्यमिक विद्यालय क्याम्पस',
+  heroBackgroundImage: '',
+  heroBackgroundEnabled: true,
+  heroBackgroundAltEn: 'Ishwari Secondary School Campus',
+  heroBackgroundAltNp: 'ईश्वरी माध्यमिक विद्यालय क्याम्पस',
   stats: {
     students: '1,240+',
     studentsLabelEn: 'Enrolled Students',

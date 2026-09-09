@@ -11,6 +11,8 @@ import {
   FileCode,
   Download,
   Calendar,
+  Clock,
+  Globe,
   Bell,
   Phone,
   Mail,
@@ -28,75 +30,23 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-// Authentic crisp SVG flag for Great Britain (United Kingdom)
-const BritishFlag: React.FC<{ className?: string }> = ({ className = "w-4.5 h-3" }) => (
-  <svg className={`${className} rounded-xs shadow-2xs shrink-0 inline-block overflow-hidden`} viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg">
-    <clipPath id="uk-flag-clip"><rect width="60" height="30" rx="1.5" /></clipPath>
-    <g clipPath="url(#uk-flag-clip)">
-      <rect width="60" height="30" fill="#012169"/>
-      <path d="M0 0L60 30M60 0L0 30" stroke="#FFFFFF" strokeWidth="6"/>
-      <path d="M0 0L60 30M60 0L0 30" stroke="#C8102E" strokeWidth="2"/>
-      <path d="M30 0V30M0 15H60" stroke="#FFFFFF" strokeWidth="10"/>
-      <path d="M30 0V30M0 15H60" stroke="#C8102E" strokeWidth="6"/>
-    </g>
-  </svg>
-);
-
-// Authentic crisp SVG flag for Nepal (Double-pennant with moon and sun)
-const NepalFlag: React.FC<{ className?: string }> = ({ className = "w-3.5 h-4" }) => (
-  <svg className={`${className} shrink-0 inline-block drop-shadow-2xs overflow-visible`} viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg">
-    {/* Blue border */}
-    <path d="M2 1 L38 22 L15 22 L36 45 L2 45 Z" fill="#003893" />
-    {/* Crimson red field */}
-    <path d="M4 4 L32 20 L13 20 L30 42 L4 42 Z" fill="#DC143C" />
-    {/* Upper moon symbol */}
-    <path d="M8 12 A 5 5 0 0 0 16 12 A 4 4 0 0 1 8 12 Z" fill="#FFFFFF"/>
-    {/* Lower sun symbol */}
-    <circle cx="12.5" cy="31" r="4" fill="#FFFFFF"/>
-  </svg>
-);
-
-// Animated Fluttering Nepal Flag Component
-const FlutteringNepalFlag: React.FC<{ className?: string }> = ({ className = "w-3.5 h-4.5" }) => (
-  <div className="relative inline-flex items-center justify-center filter drop-shadow-xs select-none">
-    <motion.div
-      animate={{
-        skewY: [-1.5, 1.5, -1.5],
-        rotate: [-1, 1, -1],
-      }}
-      transition={{
-        duration: 2.5,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-      className="shrink-0 flex items-center justify-center origin-left"
-    >
-      <NepalFlag className={className} />
-    </motion.div>
-  </div>
-);
-
-// Institutional Seal Emblem Component with custom logo support
+// Institutional Logo & Crest Component with direct CMS logo support and no border container
 const InstitutionalCrest: React.FC<{ school: SchoolData }> = ({ school }) => {
   if (school.logo_url && school.logo_url.trim().length > 0) {
     return (
-      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-slate-900 border-2 border-amber-400/80 p-1 shadow-md shadow-blue-950/20 shrink-0 flex items-center justify-center overflow-hidden">
-        <img
-          src={school.logo_url}
-          alt={school.name_en}
-          className="w-full h-full object-contain rounded-xl"
-        />
-      </div>
+      <img
+        src={school.logo_url}
+        alt={school.name_en || 'Shree Ishwari Secondary School'}
+        className="h-14 sm:h-16 md:h-18 lg:h-20 w-auto max-w-[85px] sm:max-w-[95px] md:max-w-[105px] lg:max-w-[115px] object-contain shrink-0 select-none"
+      />
     );
   }
 
   return (
-    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-linear-to-br from-[#1E3A8A] via-[#1E40AF] to-[#0F172A] border-2 border-amber-400/80 p-1 shadow-md shadow-blue-900/30 shrink-0 flex items-center justify-center text-white overflow-hidden group">
-      {/* Subtle inner seal ring */}
-      <div className="absolute inset-0.5 rounded-xl border border-dashed border-amber-300/40 pointer-events-none" />
-      <div className="flex flex-col items-center justify-center leading-none text-center select-none">
-        <span className="font-serif font-black text-xl sm:text-2xl text-amber-200 drop-shadow-xs">ई</span>
-        <span className="text-[8px] sm:text-[9px] font-mono tracking-widest text-blue-100 font-bold uppercase mt-0.5">२०३५</span>
+    <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 rounded-xl bg-[#1E3A8A] text-white shrink-0 flex items-center justify-center select-none shadow-xs">
+      <div className="flex flex-col items-center justify-center leading-none text-center">
+        <span className="font-serif font-black text-2xl sm:text-3xl text-amber-300">ई</span>
+        <span className="text-[9px] sm:text-[10px] font-mono tracking-widest text-blue-100 font-bold uppercase mt-1">२०२८</span>
       </div>
     </div>
   );
@@ -129,7 +79,8 @@ export const Header: React.FC<HeaderProps> = ({
   securityConfig,
   notices = [],
 }) => {
-  const [bsTime, setBsTime] = useState<string>('');
+  const [dateStr, setDateStr] = useState<string>('');
+  const [timeStr, setTimeStr] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState<boolean>(false);
   const moreRef = React.useRef<HTMLDivElement>(null);
@@ -167,34 +118,31 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Live ticking Bikram Sambat Date & Time Engine
+  // Compact Bikram Sambat Date & Time
   useEffect(() => {
     const nepaliDigits: Record<string, string> = {
       '0': '०', '1': '१', '2': '२', '3': '३', '4': '४',
       '5': '५', '6': '६', '7': '७', '8': '८', '9': '९'
     };
-    const weekdaysEn = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const weekdaysNp = ['आइतबार', 'सोमबार', 'मङ्गलबार', 'बुधबार', 'बिहीबार', 'शुक्रबार', 'शनिबार'];
 
     const updateClock = () => {
       const now = new Date();
-      const dayIdx = now.getDay();
       const rawHours = now.getHours();
       const isAm = rawHours < 12;
       const hours12 = rawHours % 12 || 12;
       const hoursStr = String(hours12).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
 
       if (isNp) {
         const npHours = hoursStr.split('').map(d => nepaliDigits[d] || d).join('');
         const npMinutes = minutes.split('').map(d => nepaliDigits[d] || d).join('');
-        const npSeconds = seconds.split('').map(d => nepaliDigits[d] || d).join('');
         const npAmPm = isAm ? 'पूर्वाह्न' : 'अपराह्न';
-        setBsTime(`${weekdaysNp[dayIdx]}, २०८३ भाद्र २० | ${npHours}:${npMinutes}:${npSeconds} ${npAmPm}`);
+        setDateStr('२०८३ भाद्र २०');
+        setTimeStr(`${npHours}:${npMinutes} ${npAmPm}`);
       } else {
         const enAmPm = isAm ? 'AM' : 'PM';
-        setBsTime(`${weekdaysEn[dayIdx]}, Bhadra 20, 2083 | ${hoursStr}:${minutes}:${seconds} ${enAmPm}`);
+        setDateStr('Bhadra 20, 2083');
+        setTimeStr(`${hoursStr}:${minutes} ${enAmPm}`);
       }
     };
 
@@ -230,7 +178,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'achievements', labelEn: 'Achievements', labelNp: 'उपलब्धिहरू', icon: Award, badge: '★', badgeColor: 'bg-amber-600', descEn: 'Awards & Honors', descNp: 'विद्यालयका गौरवमय सफलता' },
     { id: 'documents', labelEn: 'Citizen Charter', labelNp: 'नागरिक वडापत्र', icon: FileText, descEn: 'Citizen Charter & Rules', descNp: 'सेवा, समय र दस्तुर विवरण' },
     { id: 'gallery', labelEn: 'Photo Gallery', labelNp: 'तस्बिर ग्यालरी', icon: Image, descEn: 'Campus Activities', descNp: 'कार्यक्रम तथा क्रियाकलाप' },
-    { id: 'history', labelEn: 'School History', labelNp: 'ऐतिहासिक पृष्ठभूमि', icon: BookOpen, descEn: 'Since 2032 BS', descNp: 'वि.सं. २०३२ देखिको यात्रा' },
+    { id: 'history', labelEn: 'School History', labelNp: 'ऐतिहासिक पृष्ठभूमि', icon: BookOpen, descEn: 'Since 2028 B.S.', descNp: 'वि.सं. २०२८ देखिको यात्रा' },
   ];
 
   const isMoreActive = moreNavItems.some(item => item.id === activeRoute);
@@ -242,202 +190,112 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="w-full bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-sm transition-colors duration-200">
-      {/* 1. TOP UTILITY & GOVERNMENT ACCREDITATION STRIP */}
+      {/* 1. COMPACT INSTITUTIONAL TOP BAR */}
       <div className="bg-[#0B1528] text-slate-200 border-b border-slate-800 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex flex-wrap items-center justify-between gap-2.5">
-          {/* Left: Official Flag & Urgent Circular Ticker */}
-          <div className="flex items-center space-x-3 overflow-hidden flex-1 min-w-0">
-            {/* National Flag of Nepal (Animated Wave) */}
-            <div className="inline-flex items-center border-r border-slate-800 pr-3 shrink-0" title={t('National Flag of Nepal', 'नेपालको राष्ट्रिय झण्डा')}>
-              <FlutteringNepalFlag className="w-3.5 h-4.5" />
-            </div>
-
-            {/* Latest News Automatic Continuous Ticker with Dim Sky Blue Badge */}
-            {(siteConfig ? siteConfig.showAlertTicker : true) && (
-              <div className="flex items-center space-x-2.5 overflow-hidden min-w-0 flex-1">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[10px] font-bold bg-[#0284C7] dark:bg-sky-600 text-white tracking-wider shrink-0 shadow-xs uppercase">
-                  <Bell className="w-2.5 h-2.5 animate-pulse text-white stroke-[2.2]" />
-                  <span>{t('Latest News', 'ताजा समाचार')}</span>
-                </span>
-                <div
-                  key={tickerKey}
-                  onClick={() => onRouteChange('notices')}
-                  className="overflow-hidden flex-1 relative cursor-pointer"
-                  title={t('Click to view all notices', 'सबै सूचनाहरू हेर्न क्लिक गर्नुहोस्')}
-                >
-                  <div className="animate-ticker-continuous flex items-center gap-8 py-0.5">
-                    {/* Copy 1 */}
-                    <div className="flex items-center gap-8 shrink-0">
-                      {tickerItems.map((item, idx) => (
-                        <span key={`ticker-1-${idx}`} className="text-slate-300 hover:text-white transition font-medium text-xs flex items-center gap-2.5">
-                          <span>{item}</span>
-                          <span className="text-amber-400 font-bold">•</span>
-                        </span>
-                      ))}
-                    </div>
-                    {/* Copy 2 for seamless continuous loop */}
-                    <div className="flex items-center gap-8 shrink-0">
-                      {tickerItems.map((item, idx) => (
-                        <span key={`ticker-2-${idx}`} className="text-slate-300 hover:text-white transition font-medium text-xs flex items-center gap-2.5">
-                          <span>{item}</span>
-                          <span className="text-amber-400 font-bold">•</span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-center justify-between gap-3">
+          {/* Left: Compact Semantic Inline Date & Time */}
+          <div className="flex items-center gap-2.5 text-slate-300 text-xs font-medium select-none min-w-0">
+            <span className="inline-flex items-center gap-1.5 shrink-0">
+              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span className="truncate">{dateStr}</span>
+            </span>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span className="hidden sm:inline-flex items-center gap-1.5 shrink-0">
+              <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span className="tabular-nums font-mono">{timeStr}</span>
+            </span>
           </div>
 
-          {/* Right Utilities: Live BS Clock + Compact Search + Flag Toggle + Theme Switch */}
-          <div className="flex items-center space-x-2 shrink-0">
-            {/* Live BS Clock Display with 12h Nepali AM/PM */}
-            <div
-              className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/90 border border-slate-700 text-slate-200 font-mono text-[11px] shadow-2xs select-none"
-              title={isNp ? 'नेपाली बिक्रम संवत् समय (पूर्वाह्न/अपराह्न)' : 'Nepali Bikram Sambat Live Time (AM/PM)'}
-            >
-              <Calendar className="w-3 h-3 text-amber-400 shrink-0" />
-              <span className="tabular-nums tracking-wide">{bsTime}</span>
-            </div>
-
-            {/* Compact Search Trigger Button */}
+          {/* Right: Compact Search + Language Toggle + Theme Switch */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Compact Search Trigger */}
             <button
+              type="button"
+              id="topbar-search-btn"
               onClick={onOpenSearch}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700/90 text-slate-300 hover:text-white border border-slate-700 text-xs transition cursor-pointer select-none"
+              className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-slate-700 hover:border-slate-600 bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white text-xs transition cursor-pointer select-none"
               title={t('Search website (Ctrl+K)', 'वेबसाइटमा खोज्नुहोस् (Ctrl+K)')}
+              aria-label={t('Search website', 'वेबसाइटमा खोज्नुहोस्')}
             >
-              <Search className="w-3 h-3 text-amber-400" />
-              <span className="hidden sm:inline text-[11px]">{t('Search', 'खोज्नुहोस्')}</span>
-              <kbd className="hidden sm:inline px-1 py-0.2 rounded bg-slate-900 text-[9px] font-mono text-slate-400 border border-slate-700">
+              <Search className="w-3.5 h-3.5 text-slate-400" />
+              <span className="hidden md:inline text-[11px]">{t('Search', 'खोज्नुहोस्')}</span>
+              <kbd className="hidden lg:inline px-1 py-0.2 rounded bg-slate-900 text-[9px] font-mono text-slate-400 border border-slate-700">
                 ⌘K
               </kbd>
             </button>
 
-            {/* Single Interactive Language Toggle Button with Smooth Flag Flip */}
+            {/* Compact Admin-styled Language Toggle */}
             <button
               type="button"
-              id="lang-single-toggle"
+              id="lang-toggle"
               onClick={onToggleLang}
-              title={isNp ? t('Switch to English', 'अंग्रेजी भाषामा हेर्नुहोस्') : t('नेपाली भाषामा हेर्नुहोस्', 'Switch to Nepali')}
-              aria-label={isNp ? 'Language is Nepali, click to switch to English' : 'Language is English, click to switch to Nepali'}
-              className="relative inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700/90 text-slate-200 border border-slate-700 hover:border-amber-400/70 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer select-none group"
+              title={isNp ? 'Switch to English' : 'नेपाली भाषामा हेर्नुहोस्'}
+              aria-label={isNp ? 'Current language Nepali, switch to English' : 'Current language English, switch to Nepali'}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-slate-700 hover:border-slate-600 bg-slate-800/80 hover:bg-slate-800 text-xs font-medium text-slate-200 transition cursor-pointer select-none"
             >
-              {/* Flag Icon with Smooth Rotation/Scale Transition */}
-              <div className="relative w-4.5 h-4 flex items-center justify-center overflow-visible shrink-0">
-                <AnimatePresence mode="wait" initial={false}>
-                  {isNp ? (
-                    <motion.div
-                      key="flag-nepal"
-                      initial={{ scale: 0.6, rotate: -25, opacity: 0 }}
-                      animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                      exit={{ scale: 0.6, rotate: 25, opacity: 0 }}
-                      transition={{ duration: 0.16, ease: 'easeOut' }}
-                      className="flex items-center justify-center shrink-0"
-                    >
-                      <NepalFlag className="w-3.5 h-4" />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="flag-uk"
-                      initial={{ scale: 0.6, rotate: 25, opacity: 0 }}
-                      animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                      exit={{ scale: 0.6, rotate: -25, opacity: 0 }}
-                      transition={{ duration: 0.16, ease: 'easeOut' }}
-                      className="flex items-center justify-center shrink-0"
-                    >
-                      <BritishFlag className="w-4.5 h-3" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Minimalist Dual-State Language Indicator */}
-              <div className="flex items-center gap-0.5 text-[11px] font-bold font-mono tracking-wider select-none">
-                <span className={`transition-colors duration-150 ${isNp ? 'text-amber-300' : 'text-slate-400 font-normal'}`}>
-                  नेपा
-                </span>
-                <span className="text-slate-600 text-[9px] px-0.5">/</span>
-                <span className={`transition-colors duration-150 ${!isNp ? 'text-amber-300' : 'text-slate-400 font-normal'}`}>
-                  EN
-                </span>
-              </div>
+              <Globe className="w-3.5 h-3.5 text-slate-400" />
+              <span>{isNp ? 'EN' : 'नेपाली'}</span>
             </button>
 
-            {/* Dark/Light Mode Interactive Switch Button */}
+            {/* Compact Admin-styled Dark/Light Mode Button */}
             <button
               type="button"
-              id="theme-toggle-switch"
+              id="theme-toggle"
               onClick={onToggleTheme}
-              role="switch"
-              aria-checked={theme === 'dark'}
               title={theme === 'dark' ? t('Switch to Light Mode', 'लाइट मोडमा जानुहोस्') : t('Switch to Dark Mode', 'डार्क मोडमा जानुहोस्')}
-              className="relative inline-flex items-center h-6 w-11 rounded-full p-0.5 bg-slate-800 border border-slate-700 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+              aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="p-1.5 rounded border border-slate-700 hover:border-slate-600 bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer flex items-center justify-center select-none"
             >
-              <span className="sr-only">Toggle theme</span>
-              <span
-                className={`flex items-center justify-center w-5 h-5 rounded-full transition-transform duration-200 shadow-sm ${
-                  theme === 'dark'
-                    ? 'translate-x-5 bg-blue-600 text-white'
-                    : 'translate-x-0 bg-white text-slate-800'
-                }`}
-              >
-                {theme === 'dark' ? (
-                  <Moon className="w-3 h-3 text-blue-200" />
-                ) : (
-                  <Sun className="w-3 h-3 text-amber-500" />
-                )}
-              </span>
+              {theme === 'dark' ? (
+                <Sun className="w-3.5 h-3.5 text-slate-300" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 text-slate-300" />
+              )}
             </button>
           </div>
         </div>
       </div>
 
-      {/* 2. INSTITUTIONAL BRAND HEADER BAR */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+      {/* 2. MAIN INSTITUTIONAL BRAND HEADER */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
         <div className="flex items-center justify-between gap-4">
-          {/* School Emblem & Titles */}
-          <div className="flex items-center gap-3.5">
+          {/* School Brand Identity: Logo + Information */}
+          <div className="flex items-center gap-3.5 sm:gap-4 md:gap-5">
             <button
               onClick={() => onRouteChange('home')}
-              className="cursor-pointer focus:outline-hidden"
+              className="cursor-pointer focus:outline-hidden shrink-0"
               aria-label="Go to homepage"
             >
               <InstitutionalCrest school={school} />
             </button>
 
-            <div className="text-left space-y-0.5">
-              {/* Badges: School Code & Establishment */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
-                  {school.code}
-                </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-50 dark:bg-blue-950/50 text-[#1E40AF] dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
-                  {t(`Estd. ${school.estd_bs}`, `वि.सं. ${school.estd_bs}`)}
-                </span>
-              </div>
-
-              {/* Main School Names */}
-              <h1 className="text-lg sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+            <div className="text-left space-y-1">
+              {/* Primary School Title */}
+              <h1 className="text-lg sm:text-2xl lg:text-[1.65rem] font-black tracking-tight text-slate-900 dark:text-white leading-tight">
                 <button
                   onClick={() => onRouteChange('home')}
                   className="hover:text-[#1E40AF] dark:hover:text-blue-400 transition text-left cursor-pointer"
                 >
-                  <span className="block font-bold">{isNp ? school.name_np : school.name_en}</span>
+                  <span className="block font-bold">
+                    {isNp ? (school.name_np || 'श्री ईश्वरी माध्यमिक विद्यालय') : (school.name_en || 'Shree Ishwari Secondary School')}
+                  </span>
                   <span className="block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 font-sans tracking-normal">
-                    {isNp ? school.name_en : school.name_np}
+                    {isNp ? (school.name_en || 'Shree Ishwari Secondary School') : (school.name_np || 'श्री ईश्वरी माध्यमिक विद्यालय')}
                   </span>
                 </button>
               </h1>
 
-              {/* Tagline & Location */}
-              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-1.5">
-                <span>{t(school.tagline_en, school.tagline_np)}</span>
-                <span className="text-slate-300 dark:text-slate-700">•</span>
-                <span className="text-slate-600 dark:text-slate-400 font-medium">
-                  {t(school.address_en, school.address_np)}
+              {/* Location & Establishment */}
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-[#1E40AF] dark:text-blue-400 shrink-0" />
+                  <span>{isNp ? (school.address_np || 'बैजनाथ-५, बाँके, नेपाल') : (school.address_en || 'Baijanath-5, Banke, Nepal')}</span>
                 </span>
-              </p>
+                <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+                <span className="text-slate-500 dark:text-slate-400 font-mono">
+                  {isNp ? `वि.सं. ${school.estd_bs || '२०२८'}` : `Estd. ${school.estd_bs || '2028 B.S.'}`}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -697,10 +555,13 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {/* Live BS Clock Display for Mobile */}
+          {/* Live BS Date & Time Display for Mobile */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-mono text-slate-700 dark:text-slate-300 select-none">
-            <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span className="tabular-nums font-medium">{bsTime}</span>
+            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span>{dateStr}</span>
+            <span className="text-slate-400">•</span>
+            <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span className="tabular-nums">{timeStr}</span>
           </div>
 
           {/* Quick Search Mobile */}
@@ -768,3 +629,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

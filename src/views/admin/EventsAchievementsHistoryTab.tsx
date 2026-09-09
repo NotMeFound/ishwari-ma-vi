@@ -25,6 +25,7 @@ interface EventsAchievementsHistoryTabProps {
   history: HistoryItem[];
   onUpdateHistory: (history: HistoryItem[]) => void;
   onShowToast: (msg: string) => void;
+  activeCategory?: 'events' | 'achievements' | 'history';
 }
 
 export const EventsAchievementsHistoryTab: React.FC<EventsAchievementsHistoryTabProps> = ({
@@ -36,8 +37,15 @@ export const EventsAchievementsHistoryTab: React.FC<EventsAchievementsHistoryTab
   history,
   onUpdateHistory,
   onShowToast,
+  activeCategory,
 }) => {
-  const [subSection, setSubSection] = useState<'events' | 'achievements' | 'history'>('events');
+  const [subSection, setSubSection] = useState<'events' | 'achievements' | 'history'>(activeCategory || 'events');
+
+  React.useEffect(() => {
+    if (activeCategory) {
+      setSubSection(activeCategory);
+    }
+  }, [activeCategory]);
 
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
