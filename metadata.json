@@ -1,0 +1,8 @@
+{
+  "name": "Ishwari Secondary School",
+  "description": "Official institutional web portal for Shree Ishwari Secondary School (श्री ईश्वरी माध्यमिक विद्यालय), Baijanath-5, Banke, Nepal. Estd. 2028 B.S.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
