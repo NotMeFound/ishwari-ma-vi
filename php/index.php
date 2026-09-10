@@ -18,7 +18,7 @@ require_once __DIR__ . '/includes/header.php';
                 <?= t('View Notices', 'सूचनाहरू हेर्नुहोस्') ?> →
             </a>
             <a href="about.php" class="px-4 py-2 rounded bg-slate-800 text-white border border-slate-700 font-semibold text-xs hover:bg-slate-700 transition">
-                <?= t('About School', 'हाम्रो बारेमा') ?>
+                <?= t('About School', 'हाम्रो बारेमा..') ?>
             </a>
         </div>
     </div>
