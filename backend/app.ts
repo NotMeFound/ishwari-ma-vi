@@ -51,11 +51,14 @@ export function createApp(): express.Application {
 
   // Catch-all for unhandled /api routes - strictly returns JSON
   app.use('/api', (req: Request, res: Response) => {
+    const msg = `API endpoint not found: ${req.method} ${req.originalUrl}`;
     res.status(404).json({
       success: false,
-      error: {
+      message: msg,
+      error: msg,
+      errorDetails: {
         code: 'API_ENDPOINT_NOT_FOUND',
-        message: `API endpoint not found: ${req.method} ${req.originalUrl}`
+        message: msg
       }
     });
   });
@@ -79,7 +82,9 @@ export function createApp(): express.Application {
 
     res.status(statusCode).json({
       success: false,
-      error: {
+      message: errorMessage,
+      error: errorMessage,
+      errorDetails: {
         code: errorCode,
         message: errorMessage
       }
@@ -89,6 +94,7 @@ export function createApp(): express.Application {
   // Global top-level error handler - ensures Express never serves HTML stack trace error pages
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const statusCode = typeof err?.status === 'number' && err.status >= 400 && err.status <= 599 ? err.status : 500;
+    const errMsg = err?.message || 'Internal Server Error';
     if (statusCode >= 500) {
       console.error('[Unhandled Server Error]', {
         method: req.method,
@@ -100,9 +106,11 @@ export function createApp(): express.Application {
     }
     res.status(statusCode).json({
       success: false,
-      error: {
+      message: errMsg,
+      error: errMsg,
+      errorDetails: {
         code: err?.code || 'INTERNAL_SERVER_ERROR',
-        message: err?.message || 'Internal Server Error'
+        message: errMsg
       }
     });
   });

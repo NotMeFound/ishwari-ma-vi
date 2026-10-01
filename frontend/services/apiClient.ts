@@ -92,6 +92,33 @@ export interface AuthLoginResponse {
 }
 
 /**
+ * Safely extracts a displayable string from any error representation,
+ * including objects like `{ code, message }` or standard Error instances.
+ * Guarantees that raw objects are never passed into React children.
+ */
+export function formatErrorMessage(err: unknown, fallback: string = 'An unexpected error occurred'): string {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err;
+  if (typeof err === 'object') {
+    const obj = err as any;
+    if (typeof obj.message === 'string' && obj.message.trim().length > 0) {
+      return obj.message;
+    }
+    if (typeof obj.error === 'string' && obj.error.trim().length > 0) {
+      return obj.error;
+    }
+    if (typeof obj.error === 'object' && obj.error !== null) {
+      if (typeof obj.error.message === 'string') return obj.error.message;
+      if (typeof obj.error.code === 'string') return obj.error.code;
+    }
+    if (typeof obj.code === 'string') {
+      return obj.code;
+    }
+  }
+  return fallback;
+}
+
+/**
  * Safely parses response as JSON only if Content-Type indicates JSON.
  * Avoids uncaught syntax errors when reverse proxy or server returns HTML.
  */
@@ -201,7 +228,7 @@ class APIClient {
         body: JSON.stringify(payload)
       });
 
-      const data = await safeParseJson<AuthLoginResponse>(res);
+      const data = await safeParseJson<any>(res);
       if (!data) {
         if (res.status === 401) {
           return {
@@ -221,10 +248,16 @@ class APIClient {
         };
       }
 
+      // Strictly normalize any server error response (whether string, { code, message }, etc.)
+      const normalizedError = data.error ? formatErrorMessage(data.error, 'Authentication failed.') : undefined;
+
       if (data.success && data.token) {
         this.setToken(data.token);
       }
-      return data;
+      return {
+        ...data,
+        error: normalizedError
+      };
     } catch {
       return {
         success: false,
