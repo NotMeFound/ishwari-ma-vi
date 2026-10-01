@@ -210,7 +210,6 @@ export const AboutView: React.FC<AboutViewProps> = ({
                       ? 'object-right'
                       : 'object-center';
 
-                  // If there are 3 pillar sections, make 3rd card span 2 cols on tablet for [1][2] / [ 3 ] arrangement
                   const tabletSpanClass =
                     pillarSections.length === 3 && idx === 2
                       ? 'md:col-span-2 lg:col-span-1'
@@ -226,7 +225,6 @@ export const AboutView: React.FC<AboutViewProps> = ({
                           : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 hover:border-[#1E40AF]/40 dark:hover:border-blue-400/40 shadow-2xs'
                       }`}
                     >
-                      {/* Background Image Layer: strictly behind content, never determines card height */}
                       {hasBg && (
                         <>
                           <div
@@ -242,7 +240,6 @@ export const AboutView: React.FC<AboutViewProps> = ({
                             />
                           </div>
 
-                          {/* Subtle educational institution overlay ensuring WCAG AAA readability */}
                           <div
                             aria-hidden="true"
                             className="absolute inset-0 z-1 bg-white/92 sm:bg-white/88 dark:bg-slate-950/92 sm:dark:bg-slate-950/88 backdrop-blur-[0.5px] transition-colors duration-200 group-hover:bg-white/84 dark:group-hover:bg-slate-950/84 pointer-events-none"
@@ -250,9 +247,7 @@ export const AboutView: React.FC<AboutViewProps> = ({
                         </>
                       )}
 
-                      {/* Content Layer in normal document flow with higher z-index */}
                       <div className="relative z-2 space-y-3.5">
-                        {/* Monochrome institutional icon with subtle hover accent */}
                         <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-[#1E40AF] dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-[1.04] group-hover:bg-blue-100/70 dark:group-hover:bg-blue-900/60">
                           {renderIcon(section.icon)}
                         </div>
@@ -267,7 +262,6 @@ export const AboutView: React.FC<AboutViewProps> = ({
                         </div>
                       </div>
 
-                      {/* Optional metadata or caption footer */}
                       {(section.image_caption_en || section.image_caption_np) && hasBg && (
                         <div className="relative z-2 pt-4 mt-auto border-t border-slate-200/60 dark:border-slate-800/60">
                           <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium italic">
@@ -283,7 +277,7 @@ export const AboutView: React.FC<AboutViewProps> = ({
           );
         })()}
 
-        {/* Additional Custom/Extended Sections created by Admin */}
+        {/* Additional Custom/Extended Sections */}
         {otherSections
           .filter((s) => s.category !== 'mission' && s.category !== 'vision' && s.category !== 'values' && s.category !== 'governance')
           .map((section) => {
