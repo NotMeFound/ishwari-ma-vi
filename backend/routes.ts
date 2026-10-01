@@ -220,7 +220,7 @@ apiRouter.get('/cms/stream', (req: Request, res: Response) => {
 /* ---------------- AUTHENTICATION & SESSION APIS ---------------- */
 
 // 5. Admin Authentication (Normal Password & Master Key)
-apiRouter.post('/auth/login', async (req: Request, res: Response) => {
+const handleAdminLogin = async (req: Request, res: Response) => {
   const { username, password, loginType, masterKey } = req.body;
   const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || '127.0.0.1';
   const userAgent = req.headers['user-agent'] || 'Unknown Browser';
@@ -420,7 +420,10 @@ apiRouter.post('/auth/login', async (req: Request, res: Response) => {
       sessionExpiresAt: session.expiresAt
     });
   }
-});
+};
+
+apiRouter.post('/auth/login', handleAdminLogin);
+apiRouter.post('/login', handleAdminLogin);
 
 // 6. Current Session Validation Endpoint
 apiRouter.get('/auth/me', (req: Request, res: Response) => {

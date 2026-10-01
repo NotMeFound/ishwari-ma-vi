@@ -242,6 +242,18 @@ class APIClient {
             error: 'Access denied: account inactive or restricted.'
           };
         }
+        if (res.status === 404) {
+          return {
+            success: false,
+            error: 'Authentication endpoint not found (HTTP 404). Please verify the backend service is running.'
+          };
+        }
+        if (res.status >= 500) {
+          return {
+            success: false,
+            error: `Server error (HTTP ${res.status}). The authentication server encountered an internal error.`
+          };
+        }
         return {
           success: false,
           error: `Authentication failed (HTTP ${res.status}). Server returned an unexpected response.`

@@ -48,6 +48,7 @@ export function createApp(): express.Application {
 
   // Mount API Router
   app.use('/api', apiRouter);
+  app.use('/auth', apiRouter);
 
   // Catch-all for unhandled /api routes - strictly returns JSON
   app.use('/api', (req: Request, res: Response) => {
