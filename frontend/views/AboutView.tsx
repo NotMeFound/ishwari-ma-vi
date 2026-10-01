@@ -431,4 +431,3 @@ export const AboutView: React.FC<AboutViewProps> = ({
 };
 
 export default AboutView;
-
