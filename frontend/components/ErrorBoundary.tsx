@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+﻿import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw, RotateCcw } from 'lucide-react';
 
 interface Props {
@@ -63,7 +63,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             {this.state.error?.message && (
-              <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-[11px] font-mono text-red-600 dark:text-red-400 break-words text-left">
+              <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-[11px] font-mono text-red-600 dark:text-red-400 wrap-break-word text-left">
                 {this.state.error.message}
               </div>
             )}
@@ -96,3 +96,4 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+

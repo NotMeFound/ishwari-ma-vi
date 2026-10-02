@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   Eye,
   Download,
@@ -99,7 +99,7 @@ const SIZE_STYLES: Record<ActionSize, { container: string; icon: string }> = {
     icon: 'w-3.5 h-3.5'
   },
   md: {
-    container: 'w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl',
+    container: 'w-10 h-10 min-w-10 min-h-10 rounded-xl',
     icon: 'w-4 h-4 sm:w-4.5 sm:h-4.5'
   },
   lg: {
@@ -149,7 +149,7 @@ export const IconActionButton = React.forwardRef<
 
   const iconElement = children || (
     <IconComponent
-      className={`${sizeConfig.icon} stroke-[2] shrink-0 pointer-events-none`}
+      className={`${sizeConfig.icon} stroke-2 shrink-0 pointer-events-none`}
       strokeWidth={2}
       aria-hidden="true"
     />
@@ -189,3 +189,4 @@ export const IconActionButton = React.forwardRef<
 
 IconActionButton.displayName = 'IconActionButton';
 export default IconActionButton;
+

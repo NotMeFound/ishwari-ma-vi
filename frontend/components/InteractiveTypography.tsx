@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useInView, useReducedMotion } from 'motion/react';
 
-const nepaliDigits = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+const nepaliDigits = ['0', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
 
 /**
  * Unicode-safe grapheme segmenter for Nepali (Devanagari conjuncts & matras) and English.
@@ -506,8 +506,8 @@ export const HoverInteractiveLink: React.FC<HoverInteractiveLinkProps> = ({
 }) => {
   const transformClass =
     direction === 'up'
-      ? '@media(hover:hover){group-hover:-translate-y-0.5}'
-      : '@media(hover:hover){group-hover:translate-x-1}';
+      ? 'sm:group-hover:-translate-y-0.5'
+      : 'sm:group-hover:translate-x-1';
 
   return (
     <span
@@ -515,11 +515,7 @@ export const HoverInteractiveLink: React.FC<HoverInteractiveLinkProps> = ({
       className={`relative inline-flex items-center group cursor-pointer ${className}`}
     >
       <span
-        className={`relative inline-block transition-all duration-200 ease-out transform ${
-          direction === 'up'
-            ? 'sm:group-hover:-translate-y-0.5'
-            : 'sm:group-hover:translate-x-1'
-        } sm:group-hover:tracking-wide`}
+        className={`relative inline-block transition-all duration-200 ease-out transform ${transformClass} sm:group-hover:tracking-wide`}
       >
         {children}
         <span
@@ -612,7 +608,9 @@ export const EducatorNameTypography: React.FC<EducatorNameTypographyProps> = ({
           {name}
           {highlightUnderline && (
             <span
-              className={`absolute -bottom-1 h-[2px] rounded-full transition-all duration-300 ease-out pointer-events-none ${underlineColor} ${underlinePositionClasses[align]}`}
+// ...existing code...
+className={`absolute -bottom-1 h-0.5 rounded-full transition-all duration-300 ease-out pointer-events-none ${underlineColor} ${underlinePositionClasses[align]}`}
+// ...existing code...              className={`absolute -bottom-1 h-[2px] rounded-full transition-all duration-300 ease-out pointer-events-none ${underlineColor} ${underlinePositionClasses[align]}`}
             />
           )}
         </span>
@@ -642,7 +640,7 @@ export const EducatorNameTypography: React.FC<EducatorNameTypographyProps> = ({
         {name}
         {highlightUnderline && (
           <span
-            className={`absolute -bottom-1 h-[2px] rounded-full transition-all duration-300 ease-out pointer-events-none ${underlineColor} ${underlinePositionClasses[align]}`}
+            className={`absolute -bottom-1 h-0.5 rounded-full transition-all duration-300 ease-out pointer-events-none ${underlineColor} ${underlinePositionClasses[align]}`}
           />
         )}
       </motion.span>

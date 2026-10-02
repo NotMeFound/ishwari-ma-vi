@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Language, SiteCustomizerConfig } from '../../types';
 import {
   Sliders,
@@ -310,7 +310,7 @@ export const SiteCustomizerTab: React.FC<SiteCustomizerTabProps> = ({
                 </>
               ) : (
                 <div className="space-y-1.5 text-slate-400">
-                  <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-40 pointer-events-none" />
+                  <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-size-[2rem_2rem] opacity-40 pointer-events-none" />
                   <ImageIcon className="w-8 h-8 mx-auto text-slate-500" />
                   <p className="text-xs font-semibold">{t('Default Institutional Geometric Backdrop', 'डिफल्ट संस्थागत पृष्ठभूमि सक्रिय छ')}</p>
                   <p className="text-[10px] text-slate-500">{t('No custom background uploaded. Upload below to customize.', 'नयाँ फोटो राख्न तलबाट अपलोड गर्नुहोस्।')}</p>
@@ -553,3 +553,4 @@ export const SiteCustomizerTab: React.FC<SiteCustomizerTabProps> = ({
     </form>
   );
 };
+

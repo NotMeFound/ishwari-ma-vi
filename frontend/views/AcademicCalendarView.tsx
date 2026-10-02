@@ -272,7 +272,7 @@ END:VCALENDAR`;
     <div className="py-8 sm:py-12 bg-slate-50 dark:bg-slate-950 min-h-[85vh] text-slate-900 dark:text-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Hero Banner */}
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 p-8 sm:p-10 text-white shadow-xl border border-blue-900/40">
+        <div className="relative rounded-3xl overflow-hidden bg-linear-to-r from-blue-950 via-slate-900 to-indigo-950 p-8 sm:p-10 text-white shadow-xl border border-blue-900/40">
           <div className="relative z-10 max-w-3xl space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs font-bold uppercase tracking-wider">
               <CalendarDays className="w-3.5 h-3.5 text-blue-300" />
@@ -358,7 +358,7 @@ END:VCALENDAR`;
             {/* Right: Search + View Mode Switcher */}
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Search bar */}
-              <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <div className="relative flex-1 min-w-50 max-w-sm">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
@@ -526,7 +526,7 @@ END:VCALENDAR`;
                               <span>{event.time}</span>
                             </span>
                           )}
-                          <span className="flex items-center gap-1 truncate max-w-[150px]">
+                          <span className="flex items-center gap-1 truncate max-w-37.5">
                             <MapPin className="w-3 h-3 text-[#1E40AF] shrink-0" />
                             <span>{t(event.venue_en, event.venue_np)}</span>
                           </span>
@@ -602,7 +602,7 @@ END:VCALENDAR`;
                   return (
                     <div
                       key={`empty-${idx}`}
-                      className="min-h-[85px] sm:min-h-[100px] p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800/40"
+                      className="min-h-21.25 sm:min-h-25 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800/40"
                     />
                   );
                 }
@@ -624,7 +624,7 @@ END:VCALENDAR`;
                 return (
                   <div
                     key={`day-${day}`}
-                    className={`min-h-[85px] sm:min-h-[100px] p-2 rounded-xl border flex flex-col justify-between transition ${
+                    className={`min-h-21.25 sm:min-h-25 p-2 rounded-xl border flex flex-col justify-between transition ${
                       dayEvents.length > 0
                         ? 'border-[#1E40AF]/40 bg-blue-50/30 dark:bg-blue-950/20'
                         : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'

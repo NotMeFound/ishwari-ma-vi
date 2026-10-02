@@ -1275,7 +1275,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
         )}
 
         {/* Main Login Content Card */}
-        <main className="relative z-10 w-full max-w-[420px] my-auto">
+        <main className="relative z-10 w-full max-w-105 my-auto">
           <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg shadow-slate-200/50 dark:shadow-none p-6 sm:p-8 space-y-6">
             {/* Crest / Insignia & Portal Title */}
             <div className="text-center space-y-4">

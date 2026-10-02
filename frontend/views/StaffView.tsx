@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Language, StaffMember } from '../types';
 import {
@@ -89,7 +89,7 @@ export const StaffView: React.FC<StaffViewProps> = ({ lang, staff }) => {
               </button>
 
               {/* Passport photo in oval container */}
-              <div className="w-24 h-32 mx-auto rounded-[2rem] border-2 border-slate-300 dark:border-slate-700 overflow-hidden shadow-md bg-slate-100 dark:bg-slate-800 mb-3 flex items-center justify-center">
+              <div className="w-24 h-32 mx-auto rounded-4xl border-2 border-slate-300 dark:border-slate-700 overflow-hidden shadow-md bg-slate-100 dark:bg-slate-800 mb-3 flex items-center justify-center">
                 {selectedStaff.image && selectedStaff.image.trim() ? (
                   <img
                     src={selectedStaff.image}
@@ -197,7 +197,7 @@ export const StaffView: React.FC<StaffViewProps> = ({ lang, staff }) => {
         <div className="relative z-10 border-b border-slate-200 dark:border-slate-800 pb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-              <Users className="w-3.5 h-3.5 stroke-[2]" />
+              <Users className="w-3.5 h-3.5 stroke-2" />
               <span>{t('Faculty & Administration Directory', 'शिक्षक तथा कर्मचारी विवरण')}</span>
             </div>
             <ScrollRevealHeading as="h1" className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1 tracking-tight">
@@ -299,7 +299,7 @@ export const StaffView: React.FC<StaffViewProps> = ({ lang, staff }) => {
                 className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center space-y-4 shadow-2xs hover:border-slate-400 dark:hover:border-slate-700 hover:shadow-md transition-all duration-200 cursor-pointer group focus:outline-hidden focus:ring-2 focus:ring-slate-400"
               >
                 {/* Oval-Shaped Passport Profile Container (3:4 aspect ratio) */}
-                <div className="w-24 h-32 mx-auto rounded-[2rem] border-2 border-slate-200 dark:border-slate-700 group-hover:border-amber-400 dark:group-hover:border-amber-400 overflow-hidden bg-slate-100 dark:bg-slate-800/80 shadow-xs flex items-center justify-center transition-all duration-200 relative">
+                <div className="w-24 h-32 mx-auto rounded-4xl border-2 border-slate-200 dark:border-slate-700 group-hover:border-amber-400 dark:group-hover:border-amber-400 overflow-hidden bg-slate-100 dark:bg-slate-800/80 shadow-xs flex items-center justify-center transition-all duration-200 relative">
                   {member.image && member.image.trim() ? (
                     <img
                       src={member.image}
@@ -367,3 +367,4 @@ export const StaffView: React.FC<StaffViewProps> = ({ lang, staff }) => {
     </div>
   );
 };
+

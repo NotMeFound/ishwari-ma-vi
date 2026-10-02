@@ -314,7 +314,15 @@ export const handleAdminLogin = async (req: Request, res: Response) => {
     // The role identity MUST come from the authoritative user/account record.
     // A Master Key login MUST NEVER downgrade or upgrade roles!
     const enteredPin = String(masterKey || password || '').trim();
-    const authoritativeRecoveryPin = (state.securityConfig?.recoveryPin || '782035').trim();
+    const authoritativeRecoveryPin = state.securityConfig?.recoveryPin?.trim();
+
+    if (!authoritativeRecoveryPin) {
+      res.status(500).json({
+        success: false,
+        error: 'Institutional recovery PIN is not configured on the server. Please contact system administrator.'
+      });
+      return;
+    }
 
     if (enteredPin === authoritativeRecoveryPin) {
       isAuthenticated = true;
@@ -431,7 +439,7 @@ apiRouter.get('/auth/me', (req: Request, res: Response) => {
   const session = db.validateSession(token);
 
   if (!session) {
-    res.json({ authenticated: false });
+    res.status(401).json({ authenticated: false, error: 'Unauthorized: Session invalid or expired' });
     return;
   }
 
@@ -440,7 +448,7 @@ apiRouter.get('/auth/me', (req: Request, res: Response) => {
 
   if (!account || account.status !== 'active') {
     db.destroySession(token);
-    res.json({ authenticated: false, reason: 'Account deactivated or deleted' });
+    res.status(401).json({ authenticated: false, reason: 'Account deactivated or deleted' });
     return;
   }
 

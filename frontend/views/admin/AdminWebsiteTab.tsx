@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Language,
   SchoolData,
@@ -2032,7 +2032,7 @@ export const AdminWebsiteTab: React.FC<AdminWebsiteTabProps> = ({
                       )}
                     </>
                   ) : (
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-30 pointer-events-none" />
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-size-[3rem_3rem] opacity-30 pointer-events-none" />
                   )}
 
                   {/* Simulated Hero Copy */}
@@ -5215,3 +5215,4 @@ export const AdminWebsiteTab: React.FC<AdminWebsiteTabProps> = ({
     </div>
   );
 };
+

@@ -134,7 +134,7 @@ export const CmsItemViewModal: React.FC<CmsItemViewModalProps> = ({
                 <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {f.label}
                 </span>
-                <div className="text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg border border-slate-200/60 dark:border-slate-800 leading-relaxed break-words whitespace-pre-line">
+                <div className="text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg border border-slate-200/60 dark:border-slate-800 leading-relaxed wrap-break-word whitespace-pre-line">
                   {f.value || <span className="text-slate-400 italic">Not provided</span>}
                 </div>
               </div>

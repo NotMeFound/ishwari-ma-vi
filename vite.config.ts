@@ -63,23 +63,23 @@ export default defineConfig(() => {
       strictPort: true,
       hmr: false,
       watch: null,
-      proxy: {
+      proxy: process.env.VITE_API_URL ? {
         '/api': {
-          target: process.env.VITE_API_URL || 'http://localhost:3000',
+          target: process.env.VITE_API_URL,
           changeOrigin: true,
         },
-      },
+      } : undefined,
     },
     preview: {
       host: '0.0.0.0',
       port: 3000,
       strictPort: true,
-      proxy: {
+      proxy: process.env.VITE_API_URL ? {
         '/api': {
-          target: process.env.VITE_API_URL || 'http://localhost:3000',
+          target: process.env.VITE_API_URL,
           changeOrigin: true,
         },
-      },
+      } : undefined,
     },
     build: {
       emptyOutDir: false,

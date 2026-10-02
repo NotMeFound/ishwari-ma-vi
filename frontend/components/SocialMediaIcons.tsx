@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { SocialMediaLink, SocialPlatform, Language } from '../types';
 
 /**
@@ -292,7 +292,7 @@ export const SocialMediaBar: React.FC<SocialMediaBarProps> = ({
   // Recommended desktop size: 20px icon, 36-40px button container, 8-12px gap
   const containerSize = size === 'sm'
     ? 'w-9 h-9 min-w-[36px] min-h-[36px] sm:min-w-[38px] sm:min-h-[38px]'
-    : 'w-10 h-10 min-w-[40px] min-h-[40px]';
+    : 'w-10 h-10 min-w-10 min-h-10';
   const iconSize = 'w-5 h-5';
 
   // Base styling: neutral, monochrome default state with subtle container
@@ -343,3 +343,4 @@ export const SocialMediaBar: React.FC<SocialMediaBarProps> = ({
     </div>
   );
 };
+

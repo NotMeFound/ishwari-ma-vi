@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   Language,
   SchoolData,
@@ -308,7 +308,7 @@ Website: Official Institutional Web Portal
                 )}
               </>
             ) : (
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30 pointer-events-none" />
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30 pointer-events-none" />
             )}
 
             <TypographicBackground
@@ -797,7 +797,7 @@ Website: Official Institutional Web Portal
                   </div>
 
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                    <span className="flex items-center gap-1 truncate max-w-[150px]">
+                    <span className="flex items-center gap-1 truncate max-w-37.5">
                       <MapPin className="w-3 h-3 text-[#1E40AF]" />
                       <span>{t(ev.venue_en, ev.venue_np)}</span>
                     </span>
@@ -1127,3 +1127,4 @@ Website: Official Institutional Web Portal
     </div>
   );
 };
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Language, Notice, Vacancy } from '../types';
 import {
   Bell,
@@ -416,7 +416,7 @@ ${schoolNameEn}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 text-xs font-bold text-[#1E40AF] dark:text-blue-400 uppercase tracking-wider mb-1">
-                <Bell className="w-4 h-4 stroke-[2]" />
+                <Bell className="w-4 h-4 stroke-2" />
                 <span>{t('Official Notice Board', 'आधिकारिक सूचना पाटी')}</span>
               </div>
               <ScrollRevealHeading as="h1" className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -480,7 +480,7 @@ ${schoolNameEn}
 
               {/* Search input */}
               <div className="relative w-48 sm:w-64">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none stroke-[2]" />
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none stroke-2" />
                 <input
                   type="text"
                   value={noticeSearchQuery}
@@ -494,7 +494,7 @@ ${schoolNameEn}
                     onClick={() => setNoticeSearchQuery('')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
-                    <X className="w-3.5 h-3.5 stroke-[2]" />
+                    <X className="w-3.5 h-3.5 stroke-2" />
                   </button>
                 )}
               </div>
@@ -645,7 +645,7 @@ ${schoolNameEn}
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                 <ScrollRevealHeading as="h2" className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2]" />
+                  <Briefcase className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-2" />
                   <span>{t('Career & Vacancies', 'रोजगारी तथा पदपूर्ति विज्ञापन')}</span>
                 </ScrollRevealHeading>
               </div>
@@ -659,7 +659,7 @@ ${schoolNameEn}
 
             {/* Vacancy Search */}
             <div className="relative w-48 sm:w-64">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none stroke-[2]" />
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none stroke-2" />
               <input
                 type="text"
                 value={vacancySearchQuery}
@@ -673,7 +673,7 @@ ${schoolNameEn}
                   onClick={() => setVacancySearchQuery('')}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
-                  <X className="w-3.5 h-3.5 stroke-[2]" />
+                  <X className="w-3.5 h-3.5 stroke-2" />
                 </button>
               )}
             </div>
@@ -783,7 +783,7 @@ ${schoolNameEn}
                           {/* Deadline Date */}
                           <td className="py-3 px-4 whitespace-nowrap font-mono text-xs">
                             <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300 font-medium">
-                              <Clock className="w-3.5 h-3.5 text-slate-400 stroke-[2]" />
+                              <Clock className="w-3.5 h-3.5 text-slate-400 stroke-2" />
                               <span>{v.application_deadline}</span>
                             </span>
                           </td>
@@ -824,7 +824,7 @@ ${schoolNameEn}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1E40AF] hover:bg-[#1D4ED8] text-white text-[11px] font-bold shadow-2xs transition cursor-pointer"
                                 >
                                   <span>{t('Apply Now', 'दरखास्त दिनुहोस्')}</span>
-                                  <ExternalLink className="w-3 h-3 stroke-[2]" />
+                                  <ExternalLink className="w-3 h-3 stroke-2" />
                                 </button>
                               )}
                             </div>
@@ -873,11 +873,11 @@ ${schoolNameEn}
                     </span>
                   )}
                 </div>
-                <h3 id="notice-modal-title" className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug break-words">
+                <h3 id="notice-modal-title" className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug wrap-break-word">
                   {t(previewNotice.title_en, previewNotice.title_np)}
                 </h3>
                 <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
-                  <Calendar className="w-3.5 h-3.5 stroke-[2] shrink-0" />
+                  <Calendar className="w-3.5 h-3.5 stroke-2 shrink-0" />
                   <span>{t(previewNotice.date_en, previewNotice.date_np)}</span>
                 </div>
               </div>
@@ -888,7 +888,7 @@ ${schoolNameEn}
                 <button
                   type="button"
                   onClick={() => toggleSaveNotice(previewNotice.id)}
-                  className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
+                  className={`w-10 h-10 min-w-10 min-h-10 rounded-xl border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
                     savedNoticeIds.includes(previewNotice.id)
                       ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50 text-amber-500'
                       : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-amber-500 hover:border-amber-300 hover:bg-amber-50/50 dark:hover:bg-slate-700'
@@ -897,9 +897,9 @@ ${schoolNameEn}
                   aria-label={savedNoticeIds.includes(previewNotice.id) ? t('Remove bookmark', 'हटाउनुहोस्') : t('Save notice', 'सुरक्षित गर्नुहोस्')}
                 >
                   {savedNoticeIds.includes(previewNotice.id) ? (
-                    <BookmarkCheck className="w-5 h-5 text-amber-500 fill-amber-500 stroke-[2]" />
+                    <BookmarkCheck className="w-5 h-5 text-amber-500 fill-amber-500 stroke-2" />
                   ) : (
-                    <Bookmark className="w-5 h-5 stroke-[2]" />
+                    <Bookmark className="w-5 h-5 stroke-2" />
                   )}
                 </button>
 
@@ -907,33 +907,33 @@ ${schoolNameEn}
                 <button
                   type="button"
                   onClick={() => handleShareNotice(previewNotice)}
-                  className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-[#1E40AF] dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                  className="w-10 h-10 min-w-10 min-h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-[#1E40AF] dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
                   title={t('Share notice link', 'लिङ्क साझा गर्नुहोस्')}
                   aria-label={t('Share notice link', 'लिङ्क साझा गर्नुहोस्')}
                 >
-                  <Share2 className="w-5 h-5 stroke-[2]" />
+                  <Share2 className="w-5 h-5 stroke-2" />
                 </button>
 
                 {/* 3. Print Notice (40x40px) */}
                 <button
                   type="button"
                   onClick={handlePrintNotice}
-                  className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                  className="w-10 h-10 min-w-10 min-h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
                   title={t('Print Notice', 'सूचना छाप्नुहोस्')}
                   aria-label={t('Print Notice', 'सूचना छाप्नुहोस्')}
                 >
-                  <Printer className="w-5 h-5 stroke-[2]" />
+                  <Printer className="w-5 h-5 stroke-2" />
                 </button>
 
                 {/* 4. Top-Right Close Button (40x40px) */}
                 <button
                   type="button"
                   onClick={handleCloseNoticeModal}
-                  className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/60 hover:bg-red-50/70 dark:hover:bg-red-950/40 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                  className="w-10 h-10 min-w-10 min-h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/60 hover:bg-red-50/70 dark:hover:bg-red-950/40 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
                   title={t('Close', 'बन्द')}
                   aria-label={t('Close', 'बन्द')}
                 >
-                  <X className="w-5 h-5 stroke-[2]" />
+                  <X className="w-5 h-5 stroke-2" />
                 </button>
               </div>
             </div>
@@ -961,7 +961,7 @@ ${schoolNameEn}
                         {previewNotice.file_name || 'Official School Notice Document'}
                       </p>
                       <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-sans font-medium flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 stroke-[2] shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 stroke-2 shrink-0" />
                         <span>{t('Official School Bulletin Authenticated', 'आधिकारिक विद्यालय सूचना प्रमाणित')}</span>
                       </p>
                     </div>
@@ -974,7 +974,7 @@ ${schoolNameEn}
                           alt="Notice QR"
                           className="w-16 h-16 rounded bg-white p-0.5 object-contain"
                         />
-                        <span className="text-[9px] text-slate-500 dark:text-slate-400 font-sans font-medium text-center leading-tight max-w-[100px]">
+                        <span className="text-[9px] text-slate-500 dark:text-slate-400 font-sans font-medium text-center leading-tight max-w-25">
                           {t('Scan to view official notice', 'आधिकारिक सूचना हेर्न स्क्यान')}
                         </span>
                       </div>
@@ -1045,11 +1045,11 @@ ${schoolNameEn}
                 <button
                   type="button"
                   onClick={handlePrintNotice}
-                  className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center justify-center cursor-pointer shadow-2xs"
+                  className="w-10 h-10 min-w-10 min-h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center justify-center cursor-pointer shadow-2xs"
                   title={t('Print Notice', 'सूचना छाप्नुहोस्')}
                   aria-label={t('Print Notice', 'सूचना छाप्नुहोस्')}
                 >
-                  <Printer className="w-4 h-4 stroke-[2]" />
+                  <Printer className="w-4 h-4 stroke-2" />
                 </button>
 
                 {/* Standardized Download Action Button */}
@@ -1094,7 +1094,7 @@ ${schoolNameEn}
             </div>
 
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#1E40AF] dark:text-blue-400 mx-auto">
-              <Download className="w-6 h-6 stroke-[2]" />
+              <Download className="w-6 h-6 stroke-2" />
             </div>
 
             <div className="text-center space-y-1.5">
@@ -1157,7 +1157,7 @@ ${schoolNameEn}
                     {previewVacancy.department}
                   </span>
                 </div>
-                <h3 id="vacancy-modal-title" className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-snug break-words">
+                <h3 id="vacancy-modal-title" className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-snug wrap-break-word">
                   {t(previewVacancy.title_en, previewVacancy.title_np || previewVacancy.title_en)}
                 </h3>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-mono">
@@ -1170,20 +1170,20 @@ ${schoolNameEn}
                 <button
                   type="button"
                   onClick={() => handleShareVacancy(previewVacancy)}
-                  className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-[#1E40AF] dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                  className="w-10 h-10 min-w-10 min-h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-[#1E40AF] dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
                   title={t('Share vacancy link', 'लिङ्क साझा गर्नुहोस्')}
                   aria-label={t('Share vacancy link', 'लिङ्क साझा गर्नुहोस्')}
                 >
-                  <Share2 className="w-5 h-5 stroke-[2]" />
+                  <Share2 className="w-5 h-5 stroke-2" />
                 </button>
                 <button
                   type="button"
                   onClick={handleCloseVacancyModal}
-                  className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/60 hover:bg-red-50/70 dark:hover:bg-red-950/40 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                  className="w-10 h-10 min-w-10 min-h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/60 hover:bg-red-50/70 dark:hover:bg-red-950/40 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
                   title={t('Close', 'बन्द')}
                   aria-label={t('Close', 'बन्द')}
                 >
-                  <X className="w-5 h-5 stroke-[2]" />
+                  <X className="w-5 h-5 stroke-2" />
                 </button>
               </div>
             </div>
@@ -1197,7 +1197,7 @@ ${schoolNameEn}
                     <p className="font-bold text-slate-900 dark:text-white">Ref: ISS-VACANCY-{previewVacancy.id}</p>
                     <p className="text-slate-500 font-sans">{previewVacancy.department} • {previewVacancy.employment_type}</p>
                     <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-sans font-medium flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 stroke-[2] shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 stroke-2 shrink-0" />
                       <span>{t('Official Career Listing Authenticated', 'आधिकारिक पदपूर्ति विज्ञापन')}</span>
                     </p>
                   </div>
@@ -1207,7 +1207,7 @@ ${schoolNameEn}
                       alt="Vacancy QR"
                       className="w-16 h-16 rounded bg-white p-0.5 object-contain border border-slate-200 dark:border-slate-700 shadow-2xs"
                     />
-                    <span className="text-[9px] text-slate-500 dark:text-slate-400 font-sans font-medium max-w-[100px] leading-tight">
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 font-sans font-medium max-w-25 leading-tight">
                       {t('Scan to view official vacancy', 'आधिकारिक विज्ञापन हेर्न स्क्यान')}
                     </span>
                   </div>
@@ -1235,7 +1235,7 @@ ${schoolNameEn}
               {previewVacancy.qualifications && previewVacancy.qualifications.length > 0 && (
                 <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                   <h4 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center gap-1.5">
-                    <CheckSquare className="w-3.5 h-3.5 text-emerald-600 stroke-[2]" />
+                    <CheckSquare className="w-3.5 h-3.5 text-emerald-600 stroke-2" />
                     <span>{t('Minimum Qualifications Required', 'आवश्यक न्यूनतम योग्यता')}</span>
                   </h4>
                   <ul className="list-disc pl-5 space-y-1 text-slate-600 dark:text-slate-400 text-xs">
@@ -1250,7 +1250,7 @@ ${schoolNameEn}
               {previewVacancy.responsibilities && previewVacancy.responsibilities.length > 0 && (
                 <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                   <h4 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-[#1E40AF] stroke-[2]" />
+                    <Building2 className="w-3.5 h-3.5 text-[#1E40AF] stroke-2" />
                     <span>{t('Key Roles & Responsibilities', 'मुख्य जिम्मेवारीहरू')}</span>
                   </h4>
                   <ul className="list-disc pl-5 space-y-1 text-slate-600 dark:text-slate-400 text-xs">
@@ -1265,7 +1265,7 @@ ${schoolNameEn}
               {previewVacancy.application_instructions && (
                 <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 text-xs text-blue-900 dark:text-blue-200 space-y-1">
                   <p className="font-bold flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 stroke-[2]" />
+                    <FileText className="w-3.5 h-3.5 stroke-2" />
                     <span>{t('Application Instructions', 'आवेदन सम्बन्धी निर्देशन')}</span>
                   </p>
                   <p className="text-slate-700 dark:text-slate-300">
@@ -1309,7 +1309,7 @@ ${schoolNameEn}
                       className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold text-white bg-[#1E40AF] hover:bg-[#1D4ED8] transition shadow-xs cursor-pointer"
                     >
                       <span>{t('Apply Now', 'दरखास्त दिनुहोस्')}</span>
-                      <ExternalLink className="w-4 h-4 stroke-[2]" />
+                      <ExternalLink className="w-4 h-4 stroke-2" />
                     </button>
                   )}
               </div>
@@ -1343,7 +1343,7 @@ ${schoolNameEn}
             </div>
 
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#1E40AF] dark:text-blue-400 mx-auto">
-              <Download className="w-6 h-6 stroke-[2]" />
+              <Download className="w-6 h-6 stroke-2" />
             </div>
 
             <div className="text-center space-y-1.5">
@@ -1402,7 +1402,7 @@ ${schoolNameEn}
             </div>
 
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#1E40AF] dark:text-blue-400 mx-auto">
-              <ExternalLink className="w-6 h-6 stroke-[2]" />
+              <ExternalLink className="w-6 h-6 stroke-2" />
             </div>
 
             <div className="text-center space-y-1.5">
@@ -1433,7 +1433,7 @@ ${schoolNameEn}
                 className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white bg-[#1E40AF] hover:bg-[#1D4ED8] transition shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5"
               >
                 <span>{t('Continue', 'अगाडि बढ्नुहोस्')}</span>
-                <ExternalLink className="w-3.5 h-3.5 stroke-[2]" />
+                <ExternalLink className="w-3.5 h-3.5 stroke-2" />
               </button>
             </div>
           </div>
@@ -1444,3 +1444,4 @@ ${schoolNameEn}
   );
 };
 export default NoticesView;
+

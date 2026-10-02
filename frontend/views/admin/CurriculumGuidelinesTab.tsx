@@ -616,7 +616,7 @@ export const CurriculumGuidelinesTab: React.FC<CurriculumGuidelinesTabProps> = (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                           PDF
                         </span>
-                        <div className="max-w-[150px] truncate text-[11px] text-slate-600 dark:text-slate-400" title={item.original_filename}>
+                        <div className="max-w-37.5 truncate text-[11px] text-slate-600 dark:text-slate-400" title={item.original_filename}>
                           {item.original_filename}
                         </div>
                         <span className="text-[10px] text-slate-400 font-mono">
@@ -1082,12 +1082,12 @@ export const CurriculumGuidelinesTab: React.FC<CurriculumGuidelinesTabProps> = (
             </div>
 
             {/* Viewer Content */}
-            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-4 overflow-y-auto flex items-center justify-center min-h-[450px]">
+            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-4 overflow-y-auto flex items-center justify-center min-h-112.5">
               {previewItem.file_url && previewItem.file_url.trim() ? (
                 <iframe
                   src={previewItem.file_url}
                   title={previewItem.title_en}
-                  className="w-full h-[550px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white"
+                  className="w-full h-137.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white"
                 />
               ) : (
                 <div className="text-center p-8">

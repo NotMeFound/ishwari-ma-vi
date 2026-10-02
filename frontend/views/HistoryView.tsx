@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import { Language, HistoryItem, SiteCustomizerConfig, SchoolData } from '../types';
 import { useInView, useReducedMotion, motion } from 'motion/react';
 import { AnimatedCounter } from '../components/InteractiveTypography';
@@ -137,7 +137,7 @@ const TimelineMilestoneItem: React.FC<TimelineMilestoneItemProps> = ({
     <div ref={itemRef} className="relative pl-6 sm:pl-8 group">
       {/* Visual Dot on Spine - transforms smoothly to warm amber accent when active */}
       <div
-        className={`absolute -left-[9px] top-4 w-4 h-4 rounded-full transition-all duration-300 ${
+        className={`absolute -left-2.25 top-4 w-4 h-4 rounded-full transition-all duration-300 ${
           isInView
             ? 'bg-amber-500 border-2 border-white dark:border-slate-900 ring-4 ring-amber-400/30 scale-110 shadow-md'
             : 'bg-[#1E40AF] border-2 border-white dark:border-slate-950 shadow-xs'
@@ -322,7 +322,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, history, siteCon
           {/* Decorative Grid Pattern */}
           <div
             aria-hidden="true"
-            className={`absolute inset-0 z-1 bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none ${
+            className={`absolute inset-0 z-1 bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-size-[3rem_3rem] pointer-events-none ${
               historyBgUrl ? 'opacity-15' : 'opacity-20'
             }`}
           />
@@ -576,3 +576,4 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, history, siteCon
     </div>
   );
 };
+

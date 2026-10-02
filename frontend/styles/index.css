@@ -1,6 +1,6 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
-@variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
@@ -160,4 +160,5 @@ html.reduce-motion *::after {
     margin: 15mm;
   }
 }
+
 
