@@ -56,7 +56,7 @@ import { SearchModal } from './components/SearchModal';
 import { ScrollProgressBackToTop } from './components/ScrollProgressBackToTop';
 
 import { HomeView } from './views/HomeView';
-import AboutView from './views/AboutView';
+import { AboutView } from './views/AboutView';
 import { AcademicsView } from './views/AcademicsView';
 import { FacilitiesView } from './views/FacilitiesView';
 import { StaffView } from './views/StaffView';
