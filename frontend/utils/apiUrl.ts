@@ -23,28 +23,15 @@ export function normalizeApiBaseUrl(raw?: string): string {
  * Returns the base API URL (empty string for same-origin relative requests)
  */
 export function getApiBaseUrl(): string {
-  // 1. Check environment variable VITE_API_URL if configured
+  // 1. Check environment variable VITE_API_URL if explicitly configured
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
     const envUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
-    if (envUrl) return envUrl;
-  }
-
-  // 2. Check explicitly stored API override
-  if (typeof window !== 'undefined') {
-    try {
-      const stored = localStorage.getItem('ishwari_api_base_url');
-      if (stored) {
-        const normalized = normalizeApiBaseUrl(stored);
-        if (normalized && (normalized.startsWith('http://') || normalized.startsWith('https://'))) {
-          return normalized;
-        }
-      }
-    } catch {
-      // Ignore storage errors
+    if (envUrl && !envUrl.includes('your-backend-api') && !envUrl.includes('example.com')) {
+      return envUrl;
     }
   }
 
-  // 3. Default to same-origin relative requests
+  // 2. Default to same-origin relative requests (e.g. /api/auth/login)
   return '';
 }
 

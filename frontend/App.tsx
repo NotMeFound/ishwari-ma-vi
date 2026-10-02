@@ -83,8 +83,14 @@ const normalizeRouteFromUrl = (): string => {
   if (
     raw === 'admin' ||
     raw === 'superadmin' ||
+    raw === 'login' ||
+    raw === 'signin' ||
+    raw === 'auth' ||
+    raw === 'cms' ||
     raw.startsWith('admin/') ||
-    raw.startsWith('superadmin/')
+    raw.startsWith('superadmin/') ||
+    raw.startsWith('login/') ||
+    raw.startsWith('auth/')
   ) {
     return 'admin';
   }
