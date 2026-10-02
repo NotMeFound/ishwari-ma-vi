@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { apiRouter } from './routes';
+import { apiRouter, handleAdminLogin } from './routes';
 
 /**
  * Configure and initialize Express application
@@ -44,6 +44,15 @@ export function createApp(): express.Application {
   // Root health check for Render / cloud load balancers
   app.get('/healthz', (req: Request, res: Response) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Direct authentication aliases
+  app.post(['/login', '/auth/login', '/admin/login'], handleAdminLogin);
+  app.post(['/admin', '/superadmin'], (req: Request, res: Response, next: NextFunction) => {
+    if (req.body && req.body.username) {
+      return handleAdminLogin(req, res);
+    }
+    res.redirect(303, '/admin');
   });
 
   // Mount API Router
