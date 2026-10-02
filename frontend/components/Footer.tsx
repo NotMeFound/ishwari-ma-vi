@@ -5,8 +5,7 @@ import {
   Phone,
   Mail,
   Clock,
-  ExternalLink,
-  Shield
+  ExternalLink
 } from 'lucide-react';
 import { FooterPolicyModal } from './FooterPolicyModal';
 import { EducationalBackground } from './EducationalBackground';
@@ -108,7 +107,6 @@ export const Footer: React.FC<FooterProps> = ({
 
   const currentYear = new Date().getFullYear();
 
-  const newLocal = "truncate max-w-52.5";
   return (
     <footer
       className="relative overflow-hidden w-full bg-[#020617] text-slate-400 border-t border-slate-800/80 mt-auto text-xs"
@@ -209,8 +207,9 @@ export const Footer: React.FC<FooterProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-slate-400 hover:text-white transition-colors duration-150 text-xs inline-flex items-center gap-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-400 rounded group"
-                      title={t(item.titleEn, item.titleNp || item.titleEn)}>
-                      <span className={newLocal}>{t(item.titleEn, item.titleNp || item.titleEn)}</span>
+                      title={t(item.titleEn, item.titleNp || item.titleEn)}
+                    >
+                      <span className="truncate max-w-52.5">{t(item.titleEn, item.titleNp || item.titleEn)}</span>
                       <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-blue-400 shrink-0 stroke-2" aria-hidden="true" />
                     </a>
                   </li>
@@ -287,8 +286,8 @@ export const Footer: React.FC<FooterProps> = ({
             </p>
           </div>
 
-          {/* Right: Policy Links & Administrative Access */}
-          <div className="flex items-center gap-3 text-[11px]">
+          {/* Right: Policy Links */}
+          <div className="flex items-center gap-4 text-[11px]">
             <button
               type="button"
               onClick={() => handleOpenPolicy('privacy')}
@@ -303,16 +302,6 @@ export const Footer: React.FC<FooterProps> = ({
               className="text-slate-400 hover:text-white transition-colors duration-150 cursor-pointer underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-400 rounded px-1"
             >
               {t('Terms & Conditions', 'प्रयोगका सर्तहरू')}
-            </button>
-            <span className="text-slate-700 select-none">•</span>
-            <button
-              type="button"
-              onClick={() => onRouteChange('admin')}
-              className="text-slate-400 hover:text-blue-300 transition-colors duration-150 cursor-pointer underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-400 rounded px-1 inline-flex items-center gap-1 font-medium"
-              title={t('Administrative CMS Portal', 'प्रशासनिक पोर्टल')}
-            >
-              <Shield className="w-3 h-3 text-slate-400" />
-              <span>{t('Admin Portal', 'प्रशासन पोर्टल')}</span>
             </button>
           </div>
         </div>
