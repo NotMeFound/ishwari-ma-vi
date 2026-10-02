@@ -1,0 +1,20 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@custom-variant",
+      "description": "Tailwind CSS v4 custom variant definition.",
+      "syntax": "@custom-variant <name> (<selector>);"
+    },
+    {
+      "name": "@theme",
+      "description": "Tailwind CSS v4 theme definition.",
+      "syntax": "@theme { ... }"
+    },
+    {
+      "name": "@utility",
+      "description": "Tailwind CSS v4 utility definition.",
+      "syntax": "@utility <name> { ... }"
+    }
+  ]
+}

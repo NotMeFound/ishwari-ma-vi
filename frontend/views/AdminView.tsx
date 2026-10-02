@@ -203,22 +203,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
 }) => {
   const effectiveAccounts = adminAccounts && adminAccounts.length > 0 ? adminAccounts : initialAdminAccounts;
 
-  const [currentAccount, setCurrentAccount] = useState<AdminAccount | null>(() => {
-    const saved = safeSessionStorage.getItem('ishwari_current_account');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {}
-    }
-    if (safeSessionStorage.getItem('ishwari_admin_auth') === 'true') {
-      return (adminAccounts && adminAccounts.length > 0 ? adminAccounts : initialAdminAccounts)[0];
-    }
-    return null;
-  });
+  const [currentAccount, setCurrentAccount] = useState<AdminAccount | null>(null);
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return safeSessionStorage.getItem('ishwari_admin_auth') === 'true';
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string>(() => {
     const saved = safeStorage.getItem('ishwari_saved_admin_username');
     if (saved && saved.toLowerCase() === 'admin') {
